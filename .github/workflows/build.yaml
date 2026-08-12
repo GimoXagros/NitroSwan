@@ -29,7 +29,7 @@ jobs:
       - name: Build DS version
         run: make -j2 NAME=NitroSwan-DS-0.7.7-custom
 
-      - name: Build DSi/dSpico version
+      - name: Build DSi/DSpico version
         run: |
           make -j2 NAME=NitroSwan-DSi-0.7.7-custom DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"

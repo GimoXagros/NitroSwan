@@ -2,7 +2,7 @@ NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 V0.7.7-custom - 2026-08-13 (GimoXagros custom build)
-	Added a DSi/dSpico compatibility profile for Nintendo 3DS: request the
+	Added a DSi/DSpico compatibility profile for Nintendo 3DS: request the
 	134 MHz ARM9 clock and force the stable 60 Hz frame-conversion path.
 	Added English, Japanese and Korean menus with persistent language setting.
 	Added UTF-8 and legacy CP949 Korean filename decoding.

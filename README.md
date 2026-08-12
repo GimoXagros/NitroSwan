@@ -1,16 +1,37 @@
-# NitroSwan V0.7.7
+# NitroSwan V0.7.7-custom
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
 This is a Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2
- emulator for the Nintendo DS(i)/3DS.
+emulator for the Nintendo DS(i)/3DS. This custom release adds an optimized
+Nintendo 3DS dSpico/DSi profile, English/Japanese/Korean menus, multilingual
+filenames, and per-game RAM cheats while retaining the upstream 0.7.7 core.
+
+## 0.7.7-custom 주요 기능
+
+- Nintendo 3DS의 dSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
+  불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
+- 메뉴 언어는 `Options > Machine > Language`에서 영어/일본어/한국어로
+  변경할 수 있으며 기존 설정 파일과 호환됩니다.
+- UTF-8 및 기존 CP949 한글 파일명을 지원합니다. 한글/일본어 글꼴은 원본
+  영문 메뉴와 같은 흰색-회색 계조 및 검은색 그림자 스타일로 표시됩니다.
+- 게임별 `.cht` RAM 치트를 지원합니다. 자세한 형식은 아래 `Cheats` 절을
+  참고하십시오.
+
+### Which build should I use? / 빌드 선택
+
+- `NitroSwan-DSi-0.7.7-custom.nds`: DSi 모드의 3DS+dSpico/Pico Loader 및
+  DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
+- `NitroSwan-DS-0.7.7-custom.nds`: DS/DS Lite 및 일반 DS-mode
+  플래시카트용 빌드입니다.
 
 ## How to use
 
 1. Create a folder named "nitroswan" in either the root of your flash card or
  in the data folder. This is where settings and save files end up.
 2. Now put game/bios files into a folder where you have (WonderSwan) roms, max
- 768 files per folder, filenames must not be longer than 127 chars. You can use
+ 768 files per folder. UTF-8 and legacy Korean CP949 filenames are supported
+ (the filename buffer accepts up to 1023 bytes). You can use
  zip-files (as long as they use the deflate compression). CAUTION! Games that
  require SLOT-2 RAM can not be used with zip-files!
 3. Depending on your flashcart you might have to DLDI patch the emulator.
@@ -40,6 +61,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
 * Load NVRAM: Load non volatile ram (EEPROM/SRAM) for the currently running game.
 * Save NVRAM: Save non volatile ram (EEPROM/SRAM) for the currently running game.
 * Load Patch: Apply an IPS patch to the currectly loaded rom.
+* Cheats: Enable or disable cheats loaded from the current game's `.cht` file.
 * Save Settings: Save the current settings (and internal EEPROM).
 * Reset Game: Reset the currently running game.
 
@@ -63,6 +85,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
   * Clear Internal EEPROM: Reset internal EEPROM.
   * Headphones: Select whether heaphones are connected or not.
   * Cpu speed hacks: Allow speed hacks.
+  * Language: Select English, Japanese, or Korean menus.
 * Settings:
   * Speed: Switch between speed modes.
     * Normal: Game runs at its normal speed.
@@ -91,6 +114,41 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
 ### About
 
 Some info about the emulator and game...
+
+## Cheats
+
+Put a text file beside the game with the same basename and a `.cht` extension.
+For example, `MyGame.wsc` uses `MyGame.cht`. The file is read automatically
+after the game loads. Press A in `File > Cheats` to toggle an entry; the enabled
+state is saved immediately.
+
+```text
+# Address:value enabled description
+01234:7F 1 Infinite energy
+01235FF 0 Disabled example
+
+# Conditional: write value only when the current byte equals compare
+01236?10:20 1 Conditional example
+```
+
+Addresses and values are hexadecimal. For stability, this release accepts only
+the WonderSwan internal RAM/current SRAM range `00000`-`1FFFF`, up to 64 entries,
+and one-byte writes. Blank lines and lines beginning with `#` or `;` are ignored.
+Codes without an enabled flag are loaded disabled.
+
+## Build
+
+BlocksDS is required. The standard build is `make
+NAME=NitroSwan-DS-0.7.7-custom`. The DSi/dSpico build is:
+
+```sh
+make NAME=NitroSwan-DSi-0.7.7-custom DSPICO_3DS_BUILD=1 \
+  SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
+```
+
+Run `python3 tools/validate_localization.py` before building. It verifies the
+translation table, binary font structure, duplicate keys, and complete
+Japanese/Korean glyph coverage.
 
 ## Controls
 

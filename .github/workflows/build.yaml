@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-nds:
-    name: Build
+    name: Build and validate
     runs-on: ubuntu-latest
     container: skylyrac/blocksds:slim-latest
     steps:
@@ -18,15 +18,24 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build
-        run: make
+      - name: Validate localization and font coverage
+        run: python3 tools/validate_localization.py
+
+      - name: Build DS version
+        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom
+
+      - name: Build DSi/dSpico version
+        run: |
+          make -j2 NAME=NitroSwan-DSi-0.7.7-custom DSPICO_3DS_BUILD=1 \
+            SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: NitroSwan
+          name: NitroSwan-0.7.7-custom
           path: |
             History.txt
-            NitroSwan.nds
+            NitroSwan-DS-0.7.7-custom.nds
+            NitroSwan-DSi-0.7.7-custom.nds
             README.md
             WonderWitch.md

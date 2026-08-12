@@ -17,8 +17,10 @@
 #include "WSBottom.h"
 #include "WSCBottom.h"
 #include "SCBottom.h"
+#include "Localization.h"
+#include "Cheats.h"
 
-#define EMUVERSION "V0.7.7 2026-07-25"
+#define EMUVERSION "V0.7.7-custom 2026-08-13"
 
 void hacksInit(void);
 
@@ -53,10 +55,13 @@ static const char *getSprLayerText(void);
 static void winLayerSet(void);
 static const char *getWinLayerText(void);
 static void languageSet(void);
+static const char *getLanguageText(void);
 
 static void ui11(void);
 static void ui12(void);
 static void ui13(void);
+static void ui14(void);
+static void uiCheats(void);
 static void updateGameId(char *buffer);
 static void updateCartInfo(char *buffer);
 static void updateMapperInfo(char *buffer);
@@ -71,6 +76,7 @@ const MItem fileItems[] = {
 	{"Load NVRAM", loadNVRAM},
 	{"Save NVRAM", saveNVRAM},
 	{"Load Patch", selectIPS},
+	{"Cheats", ui14},
 	{"Save Settings", (void(*)(void))saveSettings},
 	{"Eject Game", ejectGame},
 	{"Reset Console", resetGame},
@@ -106,7 +112,7 @@ const MItem machineItems[] = {
 	{"Select WS Bios", selectBnWBios},
 	{"Select WS Color Bios", selectColorBios},
 	{"Select WS Crystal Bios", selectCrystalBios},
-	//{"Language:", languageSet},
+	{"Language:", languageSet, getLanguageText},
 };
 const MItem setItems[] = {
 	{"Speed:", speedSet, getSpeedText},
@@ -174,8 +180,9 @@ const Menu menu10 = MENU_M("", uiDummy, dummyItems);
 const Menu menu11 = MENU_M("WonderWitch", uiAuto, wonderWitchItems);
 const Menu menu12 = MENU_M("BootFriend", uiAuto, bootFriendItems);
 const Menu menu13 = MENU_M("Formatt Storage?", uiAuto, formattItems);
+Menu menu14 = MENU_M("Cheat Menu", uiCheats, dummyItems);
 
-const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10, &menu11, &menu12, &menu13};
+const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10, &menu11, &menu12, &menu13, &menu14};
 
 u8 gContrastValue = 3;
 u8 gBorderEnable = 1;
@@ -231,11 +238,11 @@ void uiAbout() {
 	char gameInfoString[32];
 	cls(1);
 	drawTabs();
-	drawMenuText("B:        WS B button", 4, 0);
-	drawMenuText("A:        WS A button", 5, 0);
-	drawMenuText("Start:    WS Start button", 6, 0);
-	drawMenuText("Select:   WS Sound button", 7, 0);
-	drawMenuText("DPad:     WS X1-X4", 8, 0);
+	drawMenuText(tr("B:        WS B button"), 4, 0);
+	drawMenuText(tr("A:        WS A button"), 5, 0);
+	drawMenuText(tr("Start:    WS Start button"), 6, 0);
+	drawMenuText(tr("Select:   WS Sound button"), 7, 0);
+	drawMenuText(tr("DPad:     WS X1-X4"), 8, 0);
 
 	updateGameId(gameInfoString);
 	drawMenuText(gameInfoString, 10, 0);
@@ -259,6 +266,23 @@ void ui12() {
 }
 void ui13() {
 	enterMenu(13);
+}
+
+void ui14() {
+	menu14.itemCount = cheatsGetCount() ? cheatsGetCount() : 1;
+	enterMenu(14);
+}
+
+void uiCheats() {
+	setupSubMenu(tr("Cheat Menu"));
+	const int count = cheatsGetCount();
+	if (count == 0) {
+		drawSubItem(tr("No cheats found."), NULL);
+		return;
+	}
+	for (int i = 0; i < count; i++) {
+		drawSubItem(cheatsGetName(i), tr(cheatsIsEnabled(i) ? "On" : "Off"));
+	}
 }
 
 void nullUINormal(int key) {
@@ -532,7 +556,12 @@ const char *getBorderText() {
 }
 
 void languageSet() {
-	gLang ^= 0x01;
+	cycleUiLanguage();
+	settingsChanged = true;
+}
+
+const char *getLanguageText() {
+	return getUiLanguageName();
 }
 
 void machineSet() {
@@ -573,8 +602,12 @@ const char *getHeadphonesText() {
 }
 
 void refreshChgSet() {
+#ifdef DSPICO_3DS_BUILD
+	emuSettings &= ~ALLOW_REFRESH_CHG;
+#else
 	emuSettings ^= ALLOW_REFRESH_CHG;
 	updateLCDRefresh();
+#endif
 }
 const char *getRefreshChgText() {
 	return autoTxt[(emuSettings & ALLOW_REFRESH_CHG)>>19];

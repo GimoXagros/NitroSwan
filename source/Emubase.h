@@ -14,7 +14,7 @@ typedef struct {				//(config struct)
 	int emuSettings;
 	int sleepTime;				// autoSleepTime in 60Hz frames
 	u8 gammaValue;				// from gfx.s
-	u8 config;					// Bit 0=border on/off.
+	u8 config;					// Bit 0=border on/off, bits 1-2=UI language.
 	u8 controller;				// from io.s
 	u8 name[16];				// Name on start screen
 	u8 birthYear[2];			// BCD encoded BIG endian

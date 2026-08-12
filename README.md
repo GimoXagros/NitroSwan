@@ -4,12 +4,12 @@
 
 This is a Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2
 emulator for the Nintendo DS(i)/3DS. This custom release adds an optimized
-Nintendo 3DS dSpico/DSi profile, English/Japanese/Korean menus, multilingual
+Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
 filenames, and per-game RAM cheats while retaining the upstream 0.7.7 core.
 
 ## 0.7.7-custom 주요 기능
 
-- Nintendo 3DS의 dSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
+- Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
   불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
 - 메뉴 언어는 `Options > Machine > Language`에서 영어/일본어/한국어로
   변경할 수 있으며 기존 설정 파일과 호환됩니다.
@@ -20,7 +20,7 @@ filenames, and per-game RAM cheats while retaining the upstream 0.7.7 core.
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.nds`: DSi 모드의 3DS+dSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
 - `NitroSwan-DS-0.7.7-custom.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
@@ -139,7 +139,7 @@ Codes without an enabled flag are loaded disabled.
 ## Build
 
 BlocksDS is required. The standard build is `make
-NAME=NitroSwan-DS-0.7.7-custom`. The DSi/dSpico build is:
+NAME=NitroSwan-DS-0.7.7-custom`. The DSi/DSpico build is:
 
 ```sh
 make NAME=NitroSwan-DSi-0.7.7-custom DSPICO_3DS_BUILD=1 \

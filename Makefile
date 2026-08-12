@@ -35,7 +35,7 @@ SDIMAGE		:= image.bin
 SOURCEDIRS	:= source
 INCLUDEDIRS	:= include source
 GFXDIRS		:= graphics source/Shared/graphics
-BINDIRS		:= data
+BINDIRS		:= assets/fonts
 AUDIODIRS	:=
 # List of folders to combine into the root of NitroFS:
 NITROFSDIR	:=
@@ -44,6 +44,11 @@ NITROFSDIR	:=
 # ---------------------------
 
 DEFINES		:=	-DARM9 -DNDS -DWSAUDIO_LOW -DPICOLIBC_LONG_LONG_PRINTF_SCANF
+
+# Optional compatibility profile for DSpico/Pico Loader on Nintendo 3DS.
+ifeq ($(DSPICO_3DS_BUILD),1)
+DEFINES		+= -DDSPICO_3DS_BUILD
+endif
 
 # Libraries
 # ---------

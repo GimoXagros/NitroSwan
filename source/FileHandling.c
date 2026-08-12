@@ -19,6 +19,8 @@
 #include "InternalEEPROM.h"
 #include "WonderWitch.h"
 #include "WSCart/WSCart.h"
+#include "Localization.h"
+#include "Cheats.h"
 
 extern u8 flashMemChanged;		// From FlashMemory.s
 
@@ -36,7 +38,13 @@ ConfigData cfg;
 //---------------------------------------------------------------------------------
 void applyConfigData(void) {
 	emuSettings   = cfg.emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
+#ifdef DSPICO_3DS_BUILD
+	// The 75 Hz VCOUNT refresh trick is unreliable in 3DS DS(i) mode.
+	// Use the existing 60 Hz pacing/frame-conversion path instead.
+	emuSettings  &= ~ALLOW_REFRESH_CHG;
+#endif
 	gBorderEnable = (cfg.config & 1) ^ 1;
+	setUiLanguage((cfg.config >> 1) & 3);
 	gPaletteBank  = cfg.palette;
 	gGammaValue   = cfg.gammaValue & 0xF;
 	gContrastValue = (cfg.gammaValue >> 4) & 0xF;
@@ -58,7 +66,7 @@ void applyConfigData(void) {
 void updateConfigData(void) {
 	strcpy(cfg.magic, "cfg");
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	cfg.config      = (gBorderEnable & 1) ^ 1;
+	cfg.config      = ((gBorderEnable & 1) ^ 1) | (getUiLanguage() << 1);
 	cfg.palette     = gPaletteBank;
 	cfg.gammaValue  = (gGammaValue & 0xF) | (gContrastValue << 4);
 	cfg.sleepTime   = sleepTime;
@@ -71,7 +79,12 @@ void updateConfigData(void) {
 void initSettings() {
 	memset(&cfg, 0, sizeof(ConfigData));
 	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSLEEP_OFF | ENABLE_HEADPHONES | ALLOW_REFRESH_CHG;
+#ifdef DSPICO_3DS_BUILD
+	cfg.emuSettings &= ~ALLOW_REFRESH_CHG;
+#endif
 	cfg.gammaValue = 0x30;
+	cfg.config = ((PersonalData->language == 0)
+			? UI_LANGUAGE_JAPANESE : UI_LANGUAGE_ENGLISH) << 1;
 	cfg.sleepTime = 60*60*5;
 	cfg.birthYear[0] = 0x19;
 	cfg.birthYear[1] = 0x99;
@@ -215,7 +228,7 @@ static void loadFlashMem() {
 	FILE *flashFile;
 	char flashName[FILENAME_MAX_LENGTH];
 	int saveSize = gRomSize;
-	void *nvMem = romSpacePtr;
+	void *nvMem = (void *)romSpacePtr;
 
 	setFileExtension(flashName, currentFilename, ".flash", sizeof(flashName));
 
@@ -283,7 +296,7 @@ static void saveFlashMem() {
 	FILE *flashFile;
 	char flashName[FILENAME_MAX_LENGTH];
 	int saveSize = gRomSize;
-	void *nvMem = romSpacePtr;
+	void *nvMem = (void *)romSpacePtr;
 
 	setFileExtension(flashName, currentFilename, ".flash", sizeof(flashName));
 
@@ -488,15 +501,15 @@ void clearIntEeproms() {
 bool loadGame(const char *gameName) {
 	if (gameName) {
 		cls(0);
-		drawText("     Please wait, loading.", 11, 0);
+		drawText(tr("     Please wait, loading."), 11, 0);
 		u32 maxSize = allocatedRomMemSize;
 		u8 *romPtr = allocatedRomMem;
 		gRomSize = loadROM(romPtr, gameName, maxSize);
 		if (!gRomSize) {
 			// Enable Expansion RAM in GBA port
-			drawText("        Trying Exp-RAM.", 10, 0);
+			drawText(tr("        Trying Exp-RAM."), 10, 0);
 			if (cartRamInit(DETECT_RAM) != DETECT_RAM) {
-				drawText("         Using Exp-RAM.", 10, 0);
+				drawText(tr("         Using Exp-RAM."), 10, 0);
 				infoOutput("Using Exp-RAM.");
 				romPtr = (u8 *)cartRamUnlock();
 				maxSize = cartRamSize();
@@ -523,6 +536,7 @@ bool loadGame(const char *gameName) {
 			if (emuSettings & AUTOLOAD_STATE) {
 				loadState();
 			}
+			cheatsLoad();
 			powerIsOn = true;
 			closeMenu();
 			return false;
@@ -561,8 +575,9 @@ void checkMachine() {
 
 //---------------------------------------------------------------------------------
 void ejectCart() {
+	cheatsReset();
 	gRomSize = 0x200000;
-	memset(romSpacePtr, -1, gRomSize);
+	memset((void *)romSpacePtr, -1, gRomSize);
 	gameInserted = false;
 }
 
@@ -646,7 +661,7 @@ void selectIPS() {
 	pauseEmulation = true;
 	ui10();
 	const char *ipsName = browseForFileType(".ips");
-	if (ipsName && patchRom(romSpacePtr, ipsName, gRomSize)) {
+	if (ipsName && patchRom((void *)romSpacePtr, ipsName, gRomSize)) {
 		checkMachine();
 		loadCart();
 		setupEmuBackground();

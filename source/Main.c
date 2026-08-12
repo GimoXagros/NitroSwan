@@ -15,6 +15,7 @@
 #include "io.h"
 #include "Sound.h"
 #include "WSCart/WSCart.h"
+#include "Cheats.h"
 
 static void checkTimeOut(void);
 static void setupGraphics(void);
@@ -57,6 +58,11 @@ int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
 	if (argc > 1) {
 		enableExit = true;
+	}
+	// Some third-party DSi-mode launchers don't preserve the fast ARM9 clock.
+	// Requesting it here is safe and idempotent when already running at 134 MHz.
+	if (isDSiMode()) {
+		setCpuClock(true);
 	}
 	// Try to allocate 8MB on DSi
 	allocatedRomMemSize = 0x800000 + 0x1000;
@@ -101,6 +107,7 @@ int main(int argc, char **argv) {
 		if (!pauseEmulation) {
 			if (powerIsOn) {
 				run();
+				cheatsApply();
 			}
 			else {
 				shutDownLCD();

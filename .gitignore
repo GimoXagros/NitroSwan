@@ -12,3 +12,4 @@ compile_commands.json
 *.pc2
 *.eeprom
 *.ram
+__pycache__/

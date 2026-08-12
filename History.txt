@@ -1,6 +1,20 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom - 2026-08-13 (GimoXagros custom build)
+	Added a DSi/dSpico compatibility profile for Nintendo 3DS: request the
+	134 MHz ARM9 clock and force the stable 60 Hz frame-conversion path.
+	Added English, Japanese and Korean menus with persistent language setting.
+	Added UTF-8 and legacy CP949 Korean filename decoding.
+	Added an embedded Galmuri-derived CJK font styled to match the original
+	English menu's white/grey bevel and black shadow.
+	Added per-game .cht RAM cheats with optional compare values and safe
+	WonderSwan RAM/SRAM address validation.
+	Optimized menu-only Unicode rendering with binary font lookup and a hashed
+	dynamic glyph cache; normal emulation has no Unicode rendering overhead.
+	Fixed raw menu frame tiles being decoded as mystery CJK characters.
+	Kept the upstream V0.7.7 emulation core and save/config structure compatible.
+
 V0.7.7 - 2026-07-26 (FluBBa)
 	Fixed sound button behaviour on HW.
 	Ported from devkitARM to BlocksDS, smaller binary.

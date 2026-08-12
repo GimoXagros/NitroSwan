@@ -18,6 +18,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install validation runtime
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3
+
       - name: Validate localization and font coverage
         run: python3 tools/validate_localization.py
 

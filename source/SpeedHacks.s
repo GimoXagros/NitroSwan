@@ -3,6 +3,7 @@
 #include "ARMV30MZ/ARMV30MZmac.h"
 
 	.global hacksInit
+	.extern speedHacksSync
 
 ;@----------------------------------------------------------------------------
 
@@ -48,6 +49,9 @@ origLoop:
 	ldr r1,=sngJR_hack1
 	blne InstallHack
 noHacks:
+	ldr r0,=sngJR_hack0
+	mov r1,#(sngJR_hackEnd-sngJR_hack0)
+	bl speedHacksSync			;@ ARM9 self-modifying code needs D/I cache coherency.
 	ldmfd sp!,{r4-r6,lr}
 	bx lr
 
@@ -167,6 +171,7 @@ sngJR_hack1:				;@
 	andcs v30cyc,v30cyc,#CYC_MASK
 hack1End:
 	fetch 1
+sngJR_hackEnd:
 
 ;@----------------------------------------------------------------------------
 	.end

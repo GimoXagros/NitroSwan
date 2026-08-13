@@ -56,6 +56,7 @@ static const LocalizedString strings[] = {
 	{"Allow Refresh Change:", "リフレッシュ変更:", "화면 주사율 변경:"},
 	{"Autoload State:", "ステート自動読込:", "상태 자동 불러오기:"},
 	{"Autoload NVRAM:", "NVRAM自動読込:", "NVRAM 자동 불러오기:"},
+	{"Autosave NVRAM:", "NVRAM自動保存:", "NVRAM 자동 저장:"},
 	{"Autosave Settings:", "設定を自動保存:", "설정 자동 저장:"},
 	{"Autopause Game:", "メニュー時停止:", "메뉴에서 일시정지:"},
 	{"Powersave 2nd Screen:", "第2画面を節電:", "보조 화면 절전:"},

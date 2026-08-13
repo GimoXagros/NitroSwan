@@ -1,13 +1,14 @@
-# NitroSwan V0.7.7-custom
+# NitroSwan V0.7.7-custom.r2
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
 This is a Bandai WonderSwan (Color/Crystal) & Benesse PocketChallenge V2
 emulator for the Nintendo DS(i)/3DS. This custom release adds an optimized
 Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
-filenames, and per-game RAM cheats while retaining the upstream 0.7.7 core.
+filenames, per-game RAM cheats, and accuracy fixes based on the upstream 0.7.7
+core.
 
-## 0.7.7-custom 주요 기능
+## 0.7.7-custom.r2 주요 기능
 
 - Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
   불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
@@ -17,18 +18,30 @@ filenames, and per-game RAM cheats while retaining the upstream 0.7.7 core.
   영문 메뉴와 같은 흰색-회색 계조 및 검은색 그림자 스타일로 표시됩니다.
 - 게임별 `.cht` RAM 치트를 지원합니다. 자세한 형식은 아래 `Cheats` 절을
   참고하십시오.
+- RTC 날짜 보정·윤년·월말 처리와 흑백 기종의 16KB RAM 범위를 수정했습니다.
+- New 3DS의 16MB DSpico 디버거 RAM 영역에 맞는 캐시 처리를 추가했습니다.
+- Pico Launcher가 전달하는 FAT 장치 경로를 유지하고 ROM을 제한된 크기의
+  블록으로 읽어, 최초 직접 실행 시 로딩 화면에서 멈추는 문제를 수정했습니다.
+- 직접 실행한 ROM도 `/nitroswan`에 NVRAM을 저장합니다. 자동 저장은 기본으로
+  켜져 있으며, 기존 raw `.sav` 파일도 보조 입력 형식으로 불러올 수 있습니다.
+- 화면이 나오지 않거나 사운드가 끊기는 회귀를 막기 위해 영상·사운드·CPU
+  실시간 경로는 실기에서 검증된 `0.7.7-custom` 동작으로 복원했습니다.
+- 알려진 게임 전용 CPU idle-loop 속도핵을 다시 활성화했습니다. 기본값은
+  꺼짐이며 `Options > Machine > Cpu Speed Hacks`에서 켤 수 있습니다.
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r2.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r2.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
 
-1. Create a folder named "nitroswan" in either the root of your flash card or
- in the data folder. This is where settings and save files end up.
+1. On first launch NitroSwan creates `/nitroswan` in the root of the SD card
+ and writes a default `settings.cfg` there. Existing `nitroswan` folders in the
+ current directory or under `/data` remain compatible. A FAT hidden attribute
+ on the folder does not prevent settings, state, EEPROM, or SRAM access.
 2. Now put game/bios files into a folder where you have (WonderSwan) roms, max
  768 files per folder. UTF-8 and legacy Korean CP949 filenames are supported
  (the filename buffer accepts up to 1023 bytes). You can use
@@ -60,6 +73,8 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
 * Save State: Save a state of the currently running game.
 * Load NVRAM: Load non volatile ram (EEPROM/SRAM) for the currently running game.
 * Save NVRAM: Save non volatile ram (EEPROM/SRAM) for the currently running game.
+  NitroSwan writes native `.ram` or `.eeprom` files in `/nitroswan`; raw `.sav`
+  files of the expected cartridge size are also accepted when loading.
 * Load Patch: Apply an IPS patch to the currectly loaded rom.
 * Cheats: Enable or disable cheats loaded from the current game's `.cht` file.
 * Save Settings: Save the current settings (and internal EEPROM).
@@ -95,6 +110,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
   * Allow Refresh Change: Allow the Wonderswan to change NDS refresh rate.
   * Autoload State: Toggle Savestate autoloading. Automagically load the savestate associated with the selected game.
   * Autoload NVRAM: Toggle EEPROM/SRAM autoloading. Automagically load the EEPROM/SRAM associated with the selected game.
+  * Autosave NVRAM: Save EEPROM/SRAM when opening the menu or quitting. Enabled by default.
   * Autosave Settings: This will save settings when leaving menu if any changes are made.
   * Autopause Game: Toggle if the game should pause when opening the menu.
   * Powersave 2nd Screen: If graphics/light should be turned off for the GUI screen when menu is not active.
@@ -138,13 +154,24 @@ Codes without an enabled flag are loaded disabled.
 
 ## Build
 
-BlocksDS is required. The standard build is `make
-NAME=NitroSwan-DS-0.7.7-custom`. The DSi/DSpico build is:
+BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom DSPICO_3DS_BUILD=1 \
+python3 tools/run_core_regressions.py
+make NAME=NitroSwan-DS-0.7.7-custom.r2
+```
+
+The DSi/DSpico build is:
+
+```sh
+make NAME=NitroSwan-DSi-0.7.7-custom.r2 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
+
+The DSi build was verified with Pico Launcher/DSpico on Nintendo 3DS for direct
+ROM launch, gameplay, menu operation, automatic folder/config creation, NVRAM
+save creation, exit-time saving and save reload. The same build path was also
+checked in melonDS during development.
 
 Run `python3 tools/validate_localization.py` before building. It verifies the
 translation table, binary font structure, duplicate keys, and complete
@@ -179,26 +206,12 @@ Y is mapped to Pass.
 
 ## Games
 
-There are 3 games that I know of that has serious problems.
+Known limitations in this custom release:
 
 * Beatmania: Game is too large even for the DSi. Can be used with a 16MB SLOT-2 card or on 3DS.
-* Chou Denki Card Game: You need to initialize NVRAM, this is the last item on the first page (初期化).
-* Mahjong Touryuumon, emulated speed too fast.
-
-There are a couple of games that have visual glitches.
-
-* Dicing Knight. shadows are in front of player.
-* Digimon - Anode Tamer & Cathode Tamer, missing background gradient in battles.
-* Final Fantasy, sprites show in dialog windows.
-* Final Lap 2000, incorrect road colors.
-* Final Lap Special - GT & Formula Machine, incorrect road colors.
-* From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect sky color.
-* Makaimura, first boss sprites are glitchy, gargoyles in intro should not show up on the right.
-* Neon Genesis Evangelion - Shito Ikusei, sprites overlap avatar images.
-* Rockman & Forte - Mirai Kara no Chousensha, no background fade in intro.
-* Romancing Sa-Ga, sprites overlap text boxes.
-* Sorobang, needs all 1024 tiles in 4color mode.
-* WonderSwan Color BIOS, needs all 1024 tiles in 4color mode.
+* Chou Denki Card Game: You need to initialize NVRAM, the last item on the first page (初期化).
+* Mahjong Touryuumon: opcode-fetch waitstate accuracy still needs hardware vectors.
+* Dicing Knight: sprite priority can place shadows in front of the player.
 
 ## Accuracy
 

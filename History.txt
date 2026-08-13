@@ -1,6 +1,28 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r2 - 2026-08-14 (GimoXagros custom build)
+	Corrected RTC invalid-date handling, month lengths, leap years and rollover.
+	Corrected ASWAN RAM to 16KB and ignored writes outside the physical range.
+	Added cacheable access to the New 3DS 16MB debugger RAM used by DSpico.
+	Restored opt-in, game-bounded idle-loop speed hacks with ARM9 cache coherency.
+	Fixed the ROM-load Data abort by keeping opcode redirection on the established
+	menu-toggle path instead of forcing it during every cartridge load.
+	Aligned the cartridge-load call frame and initialized the Karnak/Sphinx state
+	pointer before mapper reset.
+	Created /nitroswan and a default settings.cfg automatically on first launch;
+	direct path access remains compatible with FAT-hidden folders.
+	Resolved direct-launch ROM arguments before settings I/O changes the working
+	directory, retained Pico Loader's FAT device, and used bounded ROM reads to
+	fix the first-load stall through DSpico.
+	Fixed direct-launch save paths so NVRAM, states and cheats stay in /nitroswan.
+	Enabled NVRAM autosave by default, exposed its setting, and save on exit.
+	Added raw .sav import fallback while retaining native .ram/.eeprom output.
+	Restored the proven V0.7.7-custom graphics, audio, REP and ROM-read paths after
+	the experimental accuracy changes caused blank video and crackling audio.
+	Added automated RTC, RAM, cache and stable hot-path regression checks.
+	Included the upstream Karnak reset pointer fix.
+
 V0.7.7-custom - 2026-08-13 (GimoXagros custom build)
 	Added a DSi/DSpico compatibility profile for Nintendo 3DS: request the
 	134 MHz ARM9 clock and force the stable 60 Hz frame-conversion path.

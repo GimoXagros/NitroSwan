@@ -26,6 +26,7 @@ extern u8 flashMemChanged;		// From FlashMemory.s
 
 static const char *const folderName = "nitroswan";
 static const char *const settingName = "settings.cfg";
+static const char *const configMagic = "cf2";
 static const char *const wsEepromName = "wsinternal.eeprom";
 static const char *const wscEepromName = "wscinternal.eeprom";
 static const char *const scEepromName = "scinternal.eeprom";
@@ -64,7 +65,7 @@ void applyConfigData(void) {
 }
 
 void updateConfigData(void) {
-	strcpy(cfg.magic, "cfg");
+	strcpy(cfg.magic, configMagic);
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
 	cfg.config      = ((gBorderEnable & 1) ^ 1) | (getUiLanguage() << 1);
 	cfg.palette     = gPaletteBank;
@@ -78,7 +79,8 @@ void updateConfigData(void) {
 
 void initSettings() {
 	memset(&cfg, 0, sizeof(ConfigData));
-	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSLEEP_OFF | ENABLE_HEADPHONES | ALLOW_REFRESH_CHG;
+	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSAVE_NVRAM
+			| AUTOSLEEP_OFF | ENABLE_HEADPHONES | ALLOW_REFRESH_CHG;
 #ifdef DSPICO_3DS_BUILD
 	cfg.emuSettings &= ~ALLOW_REFRESH_CHG;
 #endif
@@ -177,19 +179,52 @@ bool updateSettingsFromWS() {
 }
 
 int loadSettings() {
-	FILE *file;
-	if (!findFolder(folderName)
-		&& (file = fopen(settingName, "r"))) {
+	FILE *file = NULL;
+	if (ensureFolder(folderName)) {
+		return 1;
+	}
+	if ((file = fopen(settingName, "rb"))) {
 		int len = fread(&cfg, 1, sizeof(ConfigData), file);
 		fclose(file);
-		if (strstr(cfg.magic, "cfg") && len == sizeof(ConfigData)) {
+		const bool legacyConfig = memcmp(cfg.magic, "cfg", sizeof(cfg.magic)) == 0;
+		const bool currentConfig = memcmp(cfg.magic, "cf2", sizeof(cfg.magic)) == 0;
+		if ((legacyConfig || currentConfig) && len == sizeof(ConfigData)) {
+			// Older builds had an autosave flag but did not expose or enable it.
+			// Migrate once; after cf2 is written the user's menu choice is kept.
+			if (legacyConfig) {
+				cfg.emuSettings |= AUTOSAVE_NVRAM;
+			}
 			applyConfigData();
+			if (legacyConfig) {
+				updateConfigData();
+				FILE *upgradeFile = fopen(settingName, "wb");
+				if (upgradeFile) {
+					fwrite(&cfg, 1, sizeof(ConfigData), upgradeFile);
+					fclose(upgradeFile);
+				}
+			}
 			settingsChanged = false;
 			infoOutput("Settings loaded.");
 			return 0;
 		}
 		updateConfigData();
 		infoOutput("Error in settings file.");
+		return 1;
+	}
+
+	// First launch: persist the defaults prepared by initSettings().
+	updateConfigData();
+	if ((file = fopen(settingName, "wb"))) {
+		int len = fwrite(&cfg, 1, sizeof(ConfigData), file);
+		fclose(file);
+		if (len == sizeof(ConfigData)) {
+			settingsChanged = false;
+			infoOutput("Settings saved.");
+			return 0;
+		}
+	}
+	if (file) {
+		infoOutput("Couldn't save settings.");
 	}
 	else {
 		infoOutput("Couldn't open file:");
@@ -204,7 +239,7 @@ int saveSettings() {
 	FILE *file;
 	int result = 1;
 	if (!findFolder(folderName)
-		&& (file = fopen(settingName, "w"))) {
+		&& (file = fopen(settingName, "wb"))) {
 		int len = fwrite(&cfg, 1, sizeof(ConfigData), file);
 		fclose(file);
 		if (len == sizeof(ConfigData)) {
@@ -235,7 +270,7 @@ static void loadFlashMem() {
 	if (findFolder(folderName)) {
 		return;
 	}
-	if ((flashFile = fopen(flashName, "r"))) {
+	if ((flashFile = fopen(flashName, "rb"))) {
 		if (fread(nvMem, 1, saveSize, flashFile) != saveSize) {
 			infoOutput("Bad Flash file:");
 			infoOutput(flashName);
@@ -272,7 +307,14 @@ void loadNVRAM() {
 	if (findFolder(folderName)) {
 		return;
 	}
-	if ((wssFile = fopen(nvRamName, "r"))) {
+	wssFile = fopen(nvRamName, "rb");
+	if (!wssFile) {
+		// Accept raw .sav dumps from other emulators while retaining NitroSwan's
+		// native .ram/.eeprom names for output and backward compatibility.
+		setFileExtension(nvRamName, currentFilename, ".sav", sizeof(nvRamName));
+		wssFile = fopen(nvRamName, "rb");
+	}
+	if (wssFile) {
 		if (fread(nvMem, 1, saveSize, wssFile) != saveSize) {
 			infoOutput("Bad NVRAM file:");
 			infoOutput(nvRamName);
@@ -303,7 +345,7 @@ static void saveFlashMem() {
 	if (findFolder(folderName)) {
 		return;
 	}
-	if ((flashFile = fopen(flashName, "w"))) {
+	if ((flashFile = fopen(flashName, "wb"))) {
 		if (fwrite(nvMem, 1, saveSize, flashFile) != saveSize) {
 			infoOutput("Couldn't write Flash file:");
 			infoOutput(flashName);
@@ -343,7 +385,7 @@ void saveNVRAM() {
 	if (findFolder(folderName)) {
 		return;
 	}
-	if ((wssFile = fopen(nvRamName, "w"))) {
+	if ((wssFile = fopen(nvRamName, "wb"))) {
 		if (fwrite(nvMem, 1, saveSize, wssFile) != saveSize) {
 			infoOutput("Couldn't write correct number of bytes.");
 		}
@@ -502,19 +544,36 @@ bool loadGame(const char *gameName) {
 	if (gameName) {
 		cls(0);
 		drawText(tr("     Please wait, loading."), 11, 0);
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+		char diagnosticLine[64];
+		snprintf(diagnosticLine, sizeof(diagnosticLine), "D0 main=%lu dsi=%d",
+				(unsigned long)allocatedRomMemSize, isDSiMode());
+		drawText(diagnosticLine, 12, 0);
+#endif
 		u32 maxSize = allocatedRomMemSize;
 		u8 *romPtr = allocatedRomMem;
 		gRomSize = loadROM(romPtr, gameName, maxSize);
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+		snprintf(diagnosticLine, sizeof(diagnosticLine), "D1 rom=%lu",
+				(unsigned long)gRomSize);
+		drawText(diagnosticLine, 13, 0);
+#endif
 		if (!gRomSize) {
 			// Enable Expansion RAM in GBA port
 			drawText(tr("        Trying Exp-RAM."), 10, 0);
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D2 probe expansion", 14, 0);
+#endif
 			if (cartRamInit(DETECT_RAM) != DETECT_RAM) {
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+				drawText("D3 expansion found", 15, 0);
+#endif
 				drawText(tr("         Using Exp-RAM."), 10, 0);
 				infoOutput("Using Exp-RAM.");
 				romPtr = (u8 *)cartRamUnlock();
 				maxSize = cartRamSize();
 				gRomSize = loadROM(romPtr, gameName, maxSize);
-				enableSlot2Cache();
+				cartRamEnableCache();
 			}
 		}
 		else {
@@ -522,21 +581,35 @@ bool loadGame(const char *gameName) {
 		}
 
 		if (gRomSize) {
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D4 cartridge setup", 14, 0);
+#endif
 			maxRomSize = maxSize;
 			romSpacePtr = romPtr;
 
 			setEmuSpeed(0);
 			checkMachine();
 			loadCart();
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D5 cartridge ready", 15, 0);
+#endif
 			setupEmuBackground();
 			gameInserted = true;
 			if (emuSettings & AUTOLOAD_NVRAM) {
 				loadNVRAM();
 			}
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D6 nvram ready", 16, 0);
+#endif
 			if (emuSettings & AUTOLOAD_STATE) {
 				loadState();
 			}
 			cheatsLoad();
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D7 launch", 17, 0);
+			swiWaitForVBlank();
+			swiWaitForVBlank();
+#endif
 			powerIsOn = true;
 			closeMenu();
 			return false;

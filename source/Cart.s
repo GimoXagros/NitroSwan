@@ -105,7 +105,7 @@ machineInit: 				;@ Called from C
 loadCart: 					;@ Called from C:
 	.type loadCart STT_FUNC
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r11,lr}
+	stmfd sp!,{r3-r11,lr}		;@ Keep the public C ABI stack 8-byte aligned.
 
 	bl wsCartReset
 
@@ -131,6 +131,10 @@ loadCart: 					;@ Called from C:
 	moveq r1,r2					;@ Use internal bios
 	str r1,biosBase
 	bl setBootRomOverlay
+	cmp r4,#SOC_ASWAN
+	moveq r0,#1
+	movne r0,#0
+	bl setMonoRamMode
 
 	ldr r0,=wsRAM
 	str r0,[v30ptr,#v30MemTblInv-1*4]	;@ 0 RAM
@@ -143,14 +147,16 @@ loadCart: 					;@ Called from C:
 	moveq r2,#0xC000
 	bleq memset
 
-//	bl hacksInit
 	bl gfxReset
 	bl resetCartridgeBanks
 	bl ioReset
 	bl soundReset
 	mov r0,r4					;@ SOC
 	bl cpuReset
-	ldmfd sp!,{r4-r11,lr}
+	;@ Do not rebuild the redirected opcode table here.  On DSi/3DS this
+	;@ post-reset path can fault while the new ROM is being installed.
+	;@ The opt-in menu toggle calls hacksInit after emulation is established.
+	ldmfd sp!,{r3-r11,lr}
 	bx lr
 
 

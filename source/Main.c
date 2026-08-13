@@ -1,5 +1,7 @@
 #include <nds.h>
 #include <maxmod9.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "Main.h"
 #include "Shared/EmuMenu.h"
@@ -20,6 +22,8 @@
 static void checkTimeOut(void);
 static void setupGraphics(void);
 static void setupStream(void);
+static const char *resolveLaunchPath(char *destination, size_t destinationSize,
+		const char *applicationPath, const char *argument);
 
 bool powerIsOn = false;
 bool gameInserted = false;
@@ -82,7 +86,16 @@ int main(int argc, char **argv) {
 	getInput();
 	initSettings();
 	bool fsOk = initFileHelper();
-	loadSettings();
+	char launchGamePath[FILENAME_MAX_LENGTH];
+	const char *launchGame = NULL;
+	if (fsOk && argc > 1) {
+		// Folder/config loading changes the process working directory. Resolve a
+		// launcher's relative ROM argument before any of those operations run.
+		launchGame = resolveLaunchPath(launchGamePath, sizeof(launchGamePath), argv[0], argv[1]);
+	}
+	if (fsOk) {
+		loadSettings();
+	}
 	machineInit();
 	loadCart();
 	setupEmuBackground();
@@ -91,8 +104,8 @@ int main(int argc, char **argv) {
 		loadBnWBIOS();
 		loadColorBIOS();
 		loadCrystalBIOS();
-		if (argc > 1) {
-			loadGame(argv[1]);
+		if (launchGame) {
+			loadGame(launchGame);
 			soundSetMuteGUI();
 		}
 		redrawUI();
@@ -116,6 +129,50 @@ int main(int argc, char **argv) {
 //		checkTimeOut();
 	}
 	return 0;
+}
+
+//---------------------------------------------------------------------------------
+static const char *resolveLaunchPath(char *destination, size_t destinationSize,
+		const char *applicationPath, const char *argument) {
+//---------------------------------------------------------------------------------
+	if (!argument || !argument[0] || destinationSize == 0) {
+		return NULL;
+	}
+
+	// Pico Loader supplies the ROM as /absolute/path while argv[0] includes the
+	// libfat device name. Keep that device explicit even after settings I/O has
+	// changed the current directory.
+	if (argument[0] == '/' && applicationPath) {
+		const char *deviceEnd = strchr(applicationPath, ':');
+		if (deviceEnd) {
+			size_t deviceLength = (size_t)(deviceEnd - applicationPath + 1);
+			if (deviceLength < destinationSize) {
+				memcpy(destination, applicationPath, deviceLength);
+				destination[deviceLength] = 0;
+				strlcat(destination, argument, destinationSize);
+				return destination;
+			}
+		}
+	}
+	// libfat also accepts device:/absolute/path and /absolute/path forms.
+	if (argument[0] == '/' || strchr(argument, ':')) {
+		strlcpy(destination, argument, destinationSize);
+		return destination;
+	}
+
+	char launchDirectory[FILEPATH_MAX_LENGTH];
+	if (!getcwd(launchDirectory, sizeof(launchDirectory))) {
+		strlcpy(destination, argument, destinationSize);
+		return destination;
+	}
+
+	strlcpy(destination, launchDirectory, destinationSize);
+	size_t length = strlen(destination);
+	if (length && destination[length - 1] != '/') {
+		strlcat(destination, "/", destinationSize);
+	}
+	strlcat(destination, argument, destinationSize);
+	return destination;
 }
 
 //---------------------------------------------------------------------------------

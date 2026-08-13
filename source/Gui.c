@@ -20,7 +20,7 @@
 #include "Localization.h"
 #include "Cheats.h"
 
-#define EMUVERSION "V0.7.7-custom 2026-08-13"
+#define EMUVERSION "V0.7.7-custom.r2 2026-08-14"
 
 void hacksInit(void);
 
@@ -119,6 +119,7 @@ const MItem setItems[] = {
 	{"Allow Refresh Change:", refreshChgSet, getRefreshChgText},
 	{"Autoload State:", autoStateSet, getAutoStateText},
 	{"Autoload NVRAM:", autoNVRAMSet, getAutoNVRAMText},
+	{"Autosave NVRAM:", saveNVRAMSet, getSaveNVRAMText},
 	{"Autosave Settings:", autoSettingsSet, getAutoSettingsText},
 	{"Autopause Game:", autoPauseGameSet, getAutoPauseGameText},
 	{"Powersave 2nd Screen:", powerSaveSet, getPowerSaveText},

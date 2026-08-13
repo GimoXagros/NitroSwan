@@ -1,17 +1,38 @@
-NitroSwan Todo
+NitroSwan Todo (v0.7.7-custom.r2 review)
 
-	Fix ram behaviour on mono consoles.
-	Fix RTC:
-		Corrected values when setting out of range values.
+	Completed in custom.r2:
+	* Fixed 16KB RAM behaviour on mono consoles.
+	* Fixed RTC invalid values, calendar month lengths, leap years and rollover.
+	* Added cache for the 16MB New 3DS debugger RAM area used by DSpico.
+	* Restored opt-in game-specific idle-loop speed hacks with cache coherency.
+	* Fixed ROM-load Data aborts for ASCII, Korean and Japanese filenames.
+	* Restored the V0.7.7-custom video/audio/CPU hot paths after r2 regressions.
+	* Auto-created /nitroswan and default settings.cfg; hidden folders remain usable.
+	* Fixed Pico Loader first-ROM reads and direct-launch NVRAM save paths.
+	* Enabled and exposed automatic NVRAM saving, including save-on-exit.
+
+	Next work plan after custom.r2 (priority order):
+	1. Capture hardware timing vectors and add opcode-fetch ROM waitstates without
+	   adding work to every ROM read. Primary target: Mahjong Touryuumon speed.
+	2. Add per-line palette changes for Digimon, Final Lap, One Piece and Rockman.
+	3. Implement efficient sprite-window clipping for Final Fantasy, Makaimura,
+	   Neon Genesis Evangelion and Romancing Sa-Ga.
+	4. Add 4-color 1024-tile maps for Sorobang and WonderSwan Color BIOS.
+	5. Revisit sound timing, LFSR, frequency writes and HyperVoice stereo as
+	   isolated changes with DSpico performance tests after each change.
+	6. Make REP strings interruptible without checking every iteration or
+	   regressing the proven 3DS hot path.
+	7. Handle WSC Contrast High/Low, evaluate mono 4-color mode, and map the
+	   serial port to debug output with hardware verification.
+
+	Remaining accuracy work:
 	Handle Contrast High/Low for WSC, change Y every other frame.
-	Add cache for 16MB extra area on 3DS.
-	Fix better sound? Update twice per raster row.
 	Map serial port to debug out. Test!
-	Find speed hacks.
 	Change cpuReadMem20(W) to return value in r1 instead of r0?
 		Use r3 as write-back register to begin with.
 	Run mono games in 4 color mode?
-	Handle Sprite Window some how.
+	Add hardware vectors for opcode-fetch ROM waitstates.
+	Improve partial 8x8 sprite-window edge clipping if a cheaper renderer is found.
 	Sprite priority can't be fixed.
 
 GFX:

@@ -43,6 +43,7 @@
 	.global setBootRomOverlay
 	.global setSRamArea
 	.global setFlashRead
+	.global setMonoRamMode
 	.global bootRomSwitchB
 	.global bootRomSwitchW
 
@@ -140,6 +141,22 @@ flashCmdList:
 	//This is "b always flashReadMem20"
 	.long 0xEA000000 // + ((flashReadMem20 - cpuReadMem20)>>2) & 0xFFFFFF
 //	.long 0xEA000000 + ((flashCmdList - setFlashRead)>>2) & 0xFFFFFF
+
+;@----------------------------------------------------------------------------
+setMonoRamMode:			;@ r0=arg0, 0=64KB color RAM, 1=16KB mono RAM
+;@----------------------------------------------------------------------------
+	cmp r0,#2
+	bxcs lr
+	adr r2,monoRamCmpList
+	ldr r0,[r2,r0,lsl#2]
+	ldr r1,=monoRamModeB
+	str r0,[r1]
+	ldr r1,=monoRamModeW
+	str r0,[r1]
+	bx lr
+monoRamCmpList:
+	cmp r0,#0x10000000			;@ Color: all of segment 0 is writable.
+	cmp r0,#0x04000000			;@ Mono: only physical $0000-$3FFF is RAM.
 
 ;@----------------------------------------------------------------------------
 
@@ -282,6 +299,10 @@ cpuWriteMem20:				;@ r0=address set in top 20 bits, r1=value
 ;@----------------------------------------------------------------------------
 ram_WB:						;@ Write ram ($00000-$0FFFF)
 ;@----------------------------------------------------------------------------
+monoRamModeB:
+monoRamWriteGuardB:
+	cmp r0,#0x10000000
+	bxcs lr
 	ldr r2,[v30ptr,#v30MemTblInv-1*4]
 	strb r1,[r2,r0,lsr#12]
 	add r2,r2,#0x10000			;@ Size of wsRAM, ptr to DIRTYTILES.
@@ -333,6 +354,10 @@ cpuWriteMem20W:				;@ r0=address set in top 20 bits, r1=value
 ram_WW:						;@ Write ram ($00000-$0FFFF)
 dmaWriteMem20W:
 ;@----------------------------------------------------------------------------
+monoRamModeW:
+monoRamWriteGuardW:
+	cmp r0,#0x10000000
+	bxcs lr
 	ldr r2,[v30ptr,#v30MemTblInv-1*4]
 	mov r3,r0,lsr#12
 	strh r1,[r2,r3]

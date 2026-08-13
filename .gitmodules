@@ -9,7 +9,7 @@
 	url=https://github.com/FluBBaOfWard/Sphinx.git
 [submodule "source/WSCart"]
 	path = source/WSCart
-	url = https://github.com/FluBBaOfWard/WSCart.git
+	url = https://github.com/GimoXagros/WSCart.git
 [submodule "source/WSEEPROM"]
 	path = source/WSEEPROM
 	url = https://github.com/FluBBaOfWard/WSEEPROM.git

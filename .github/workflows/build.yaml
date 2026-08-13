@@ -21,7 +21,7 @@ jobs:
       - name: Install validation runtime
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends gcc python3
+          apt-get install -y --no-install-recommends gcc libc6-dev python3
 
       - name: Validate localization and font coverage
         run: python3 tools/validate_localization.py

@@ -1,9 +1,10 @@
-NitroSwan Todo (v0.7.7-custom.r2 review)
+NitroSwan Todo (v0.7.7-custom.r3 review)
 
-	Completed in custom.r2:
+	Completed through custom.r3:
 	* Fixed 16KB RAM behaviour on mono consoles.
 	* Fixed RTC invalid values, calendar month lengths, leap years and rollover.
-	* Added cache for the 16MB New 3DS debugger RAM area used by DSpico.
+	* Replaced the global DSpico MPU mapping with a NitroSwan-only 64KB ROM bank
+	  cache, preserving NDS_Shared and BlocksDS memory aliases.
 	* Restored opt-in game-specific idle-loop speed hacks with cache coherency.
 	* Fixed ROM-load Data aborts for ASCII, Korean and Japanese filenames.
 	* Restored the V0.7.7-custom video/audio/CPU hot paths after r2 regressions.
@@ -11,7 +12,7 @@ NitroSwan Todo (v0.7.7-custom.r2 review)
 	* Fixed Pico Loader first-ROM reads and direct-launch NVRAM save paths.
 	* Enabled and exposed automatic NVRAM saving, including save-on-exit.
 
-	Next work plan after custom.r2 (priority order):
+	Next work plan after custom.r3 (priority order):
 	1. Capture hardware timing vectors and add opcode-fetch ROM waitstates without
 	   adding work to every ROM read. Primary target: Mahjong Touryuumon speed.
 	2. Add per-line palette changes for Digimon, Final Lap, One Piece and Rockman.

@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r2
+# NitroSwan V0.7.7-custom.r3
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -8,7 +8,7 @@ Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
 filenames, per-game RAM cheats, and accuracy fixes based on the upstream 0.7.7
 core.
 
-## 0.7.7-custom.r2 주요 기능
+## 0.7.7-custom.r3 주요 기능
 
 - Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
   불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
@@ -19,7 +19,10 @@ core.
 - 게임별 `.cht` RAM 치트를 지원합니다. 자세한 형식은 아래 `Cheats` 절을
   참고하십시오.
 - RTC 날짜 보정·윤년·월말 처리와 흑백 기종의 16KB RAM 범위를 수정했습니다.
-- New 3DS의 16MB DSpico 디버거 RAM 영역에 맞는 캐시 처리를 추가했습니다.
+- DSpico 디버거 RAM의 대용량 ROM은 그대로 보관하고, 현재 표시되는 64KB
+  ROM 뱅크만 DS 메인 RAM에 복사하는 프로젝트 전용 캐시를 사용합니다. 이
+  방식은 NDS_Shared와 BlocksDS의 MPU 및 `memCached()`/`memUncached()` 구성을
+  변경하지 않습니다.
 - Pico Launcher가 전달하는 FAT 장치 경로를 유지하고 ROM을 제한된 크기의
   블록으로 읽어, 최초 직접 실행 시 로딩 화면에서 멈추는 문제를 수정했습니다.
 - 직접 실행한 ROM도 `/nitroswan`에 NVRAM을 저장합니다. 자동 저장은 기본으로
@@ -31,9 +34,9 @@ core.
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r2.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r3.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r2.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r3.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -158,20 +161,21 @@ BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r2
+make NAME=NitroSwan-DS-0.7.7-custom.r3
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r2 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r3 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
-The DSi build was verified with Pico Launcher/DSpico on Nintendo 3DS for direct
-ROM launch, gameplay, menu operation, automatic folder/config creation, NVRAM
-save creation, exit-time saving and save reload. The same build path was also
-checked in melonDS during development.
+The r2 DSi base was verified with Pico Launcher/DSpico on Nintendo 3DS for
+direct ROM launch, gameplay, menu operation, automatic folder/config creation,
+NVRAM save creation, exit-time saving and save reload. For r3, the new bank
+cache is covered by host regressions and complete DS/DSi builds; hardware
+performance should be checked again after upgrading.
 
 Run `python3 tools/validate_localization.py` before building. It verifies the
 translation table, binary font structure, duplicate keys, and complete

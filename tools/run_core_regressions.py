@@ -58,6 +58,21 @@ def main() -> int:
             str(exe),
         ])
         run([str(exe)])
+
+        cache_exe = Path(temp_dir) / ("dspico_rom_cache_test.exe" if os.name == "nt" else "dspico_rom_cache_test")
+        run([
+            compiler,
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Isource",
+            "tests/test_dspico_rom_cache.c",
+            "source/DspicoRomCache.c",
+            "-o",
+            str(cache_exe),
+        ])
+        run([str(cache_exe)])
     else:
         print("Host C compiler unavailable; C vectors will run in CI, Python vectors passed locally.")
     return 0

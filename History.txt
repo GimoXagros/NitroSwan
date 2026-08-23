@@ -1,10 +1,23 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r3 - 2026-08-23 (GimoXagros custom build)
+	Replaced the global DSpico MPU remap with a NitroSwan-only 64KB ROM bank cache.
+	Kept NDS_Shared and the BlocksDS memCached()/memUncached() MPU aliases intact.
+	Used fixed cache slots for the 15 visible WonderSwan ROM segments so active
+	memory-table pointers are never invalidated by cache eviction.
+	Added cache invalidation for IPS patches and write-back synchronization for
+	WonderWitch flash programming and sector erase operations.
+	Kept the standard DS build on the original direct-ROM mapping with no cache
+	lookup overhead; the new path is compiled only for DSPICO_3DS_BUILD.
+	Added host cache vectors and source regressions for MPU isolation, segment
+	mapping, invalidation and flash write-back.
+
 V0.7.7-custom.r2 - 2026-08-14 (GimoXagros custom build)
 	Corrected RTC invalid-date handling, month lengths, leap years and rollover.
 	Corrected ASWAN RAM to 16KB and ignored writes outside the physical range.
-	Added cacheable access to the New 3DS 16MB debugger RAM used by DSpico.
+	Added experimental cacheable access to the 3DS debugger RAM used by DSpico;
+	this global MPU approach was replaced by the project-local bank cache in r3.
 	Restored opt-in, game-bounded idle-loop speed hacks with ARM9 cache coherency.
 	Fixed the ROM-load Data abort by keeping opcode redirection on the established
 	menu-toggle path instead of forcing it during every cartridge load.

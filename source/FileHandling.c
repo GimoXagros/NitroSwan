@@ -21,6 +21,7 @@
 #include "WSCart/WSCart.h"
 #include "Localization.h"
 #include "Cheats.h"
+#include "DspicoRomCache.h"
 
 extern u8 flashMemChanged;		// From FlashMemory.s
 
@@ -542,6 +543,7 @@ void clearIntEeproms() {
 //---------------------------------------------------------------------------------
 bool loadGame(const char *gameName) {
 	if (gameName) {
+		dspicoRomCacheDisable();
 		cls(0);
 		drawText(tr("     Please wait, loading."), 11, 0);
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
@@ -552,6 +554,7 @@ bool loadGame(const char *gameName) {
 #endif
 		u32 maxSize = allocatedRomMemSize;
 		u8 *romPtr = allocatedRomMem;
+		RAM_TYPE expansionType = DETECT_RAM;
 		gRomSize = loadROM(romPtr, gameName, maxSize);
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
 		snprintf(diagnosticLine, sizeof(diagnosticLine), "D1 rom=%lu",
@@ -564,7 +567,8 @@ bool loadGame(const char *gameName) {
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
 			drawText("D2 probe expansion", 14, 0);
 #endif
-			if (cartRamInit(DETECT_RAM) != DETECT_RAM) {
+			expansionType = cartRamInit(DETECT_RAM);
+			if (expansionType != DETECT_RAM) {
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
 				drawText("D3 expansion found", 15, 0);
 #endif
@@ -573,7 +577,9 @@ bool loadGame(const char *gameName) {
 				romPtr = (u8 *)cartRamUnlock();
 				maxSize = cartRamSize();
 				gRomSize = loadROM(romPtr, gameName, maxSize);
-				cartRamEnableCache();
+				if (gRomSize && expansionType != N3DS_RAM) {
+					enableSlot2Cache();
+				}
 			}
 		}
 		else {
@@ -586,6 +592,11 @@ bool loadGame(const char *gameName) {
 #endif
 			maxRomSize = maxSize;
 			romSpacePtr = romPtr;
+#ifdef DSPICO_3DS_BUILD
+			if (expansionType == N3DS_RAM) {
+				dspicoRomCacheInit(romPtr, gRomSize, allocatedRomMem, allocatedRomMemSize);
+			}
+#endif
 
 			setEmuSpeed(0);
 			checkMachine();
@@ -649,6 +660,7 @@ void checkMachine() {
 //---------------------------------------------------------------------------------
 void ejectCart() {
 	cheatsReset();
+	dspicoRomCacheDisable();
 	gRomSize = 0x200000;
 	memset((void *)romSpacePtr, -1, gRomSize);
 	gameInserted = false;
@@ -735,6 +747,7 @@ void selectIPS() {
 	ui10();
 	const char *ipsName = browseForFileType(".ips");
 	if (ipsName && patchRom((void *)romSpacePtr, ipsName, gRomSize)) {
+		dspicoRomCacheInvalidate();
 		checkMachine();
 		loadCart();
 		setupEmuBackground();

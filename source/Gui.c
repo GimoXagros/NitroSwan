@@ -20,7 +20,7 @@
 #include "Localization.h"
 #include "Cheats.h"
 
-#define EMUVERSION "V0.7.7-custom.r2 2026-08-14"
+#define EMUVERSION "V0.7.7-custom.r3 2026-08-23"
 
 void hacksInit(void);
 

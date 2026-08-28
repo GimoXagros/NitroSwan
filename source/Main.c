@@ -18,6 +18,7 @@
 #include "Sound.h"
 #include "WSCart/WSCart.h"
 #include "Cheats.h"
+#include "PaletteRaster.h"
 
 static void checkTimeOut(void);
 static void setupGraphics(void);
@@ -55,6 +56,9 @@ void myVblank(void) {
 	vBlankOverflow = true;
 //	DC_FlushRange(EMUPALBUFF, 0x400);
 	vblIrqHandler();
+#if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
+	paletteRasterVBlank();
+#endif
 }
 
 //---------------------------------------------------------------------------------
@@ -82,6 +86,10 @@ int main(int argc, char **argv) {
 	setupGraphics();
 	setupStream();
 	irqSet(IRQ_VBLANK, myVblank);
+#if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
+	irqSet(IRQ_VCOUNT, paletteRasterVCountIrq);
+	irqDisable(IRQ_VCOUNT);
+#endif
 	setupGUI();
 	getInput();
 	initSettings();
@@ -98,6 +106,7 @@ int main(int argc, char **argv) {
 	}
 	machineInit();
 	loadCart();
+	paletteRasterConfigure(gGameHeader);
 	setupEmuBackground();
 	loadIntEeproms();
 	if (fsOk) {

@@ -18,9 +18,10 @@
 #include "WSCBottom.h"
 #include "SCBottom.h"
 #include "Localization.h"
+#include "PaletteRaster.h"
 #include "Cheats.h"
 
-#define EMUVERSION "V0.7.7-custom.r3 2026-08-23"
+#define EMUVERSION "V0.7.7-custom.r4 2026-08-29"
 
 void hacksInit(void);
 
@@ -318,6 +319,7 @@ void ejectGame() {
 void resetGame() {
 	checkMachine();
 	loadCart();
+	paletteRasterConfigure(gGameHeader);
 	setupEmuBackground();
 	powerIsOn = true;
 }

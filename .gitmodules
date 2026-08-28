@@ -6,7 +6,7 @@
 	url = https://github.com/FluBBaOfWard/ARMV30MZ.git
 [submodule "source/Sphinx"]
 	path = source/Sphinx
-	url=https://github.com/FluBBaOfWard/Sphinx.git
+	url = https://github.com/GimoXagros/Sphinx.git
 [submodule "source/WSCart"]
 	path = source/WSCart
 	url = https://github.com/GimoXagros/WSCart.git

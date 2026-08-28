@@ -1,6 +1,17 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r4 - 2026-08-29 (GimoXagros custom build)
+	Fixed the battle sky palette in From TV Animation One Piece - Grand Battle
+	Swan Colosseum with a title-bounded BG scanline palette replay path.
+	Recorded palette changes in a bounded triple-buffered delta list without
+	expanding EMUPALBUFF or reusing DMA3, which remains dedicated to HBlank windows.
+	Latched the target's sprite table at the hardware-compatible line boundary.
+	Deferred its 4bpp tile conversion until VBlank updates complete, then prepared
+	the next 16KB OBJ tile image in an off-screen VRAM bank and switched it with OAM.
+	Kept OBJ palette raster disabled and left every non-target game on the r3 path.
+	Verified rapid combat movement in melonDS with normal graphics, speed and sound.
+
 V0.7.7-custom.r3 - 2026-08-23 (GimoXagros custom build)
 	Replaced the global DSpico MPU remap with a NitroSwan-only 64KB ROM bank cache.
 	Kept NDS_Shared and the BlocksDS memCached()/memUncached() MPU aliases intact.

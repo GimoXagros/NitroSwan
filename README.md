@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r3
+# NitroSwan V0.7.7-custom.r4
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -8,7 +8,7 @@ Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
 filenames, per-game RAM cheats, and accuracy fixes based on the upstream 0.7.7
 core.
 
-## 0.7.7-custom.r3 주요 기능
+## 0.7.7-custom.r4 주요 기능
 
 - Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
   불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
@@ -31,12 +31,17 @@ core.
   실시간 경로는 실기에서 검증된 `0.7.7-custom` 동작으로 복원했습니다.
 - 알려진 게임 전용 CPU idle-loop 속도핵을 다시 활성화했습니다. 기본값은
   꺼짐이며 `Options > Machine > Cpu Speed Hacks`에서 켤 수 있습니다.
+- `From TV Animation One Piece - Grand Battle Swan Colosseum`의 전투 화면에서
+  발생하던 잘못된 하늘색과 캐릭터 타일 깨짐을 게임 전용 영상 경로로
+  수정했습니다. BG 팔레트 변화는 bounded triple buffer로 재생하며, 4bpp OBJ
+  타일은 VBlank 완료 후 별도 VRAM 은행에 준비해 OAM과 함께 전환합니다.
+  OBJ 팔레트 raster와 DMA3는 사용하지 않으므로 기존 HBlank 창 처리를 유지합니다.
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r3.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r4.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r3.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r4.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -161,21 +166,23 @@ BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r3
+make NAME=NitroSwan-DS-0.7.7-custom.r4
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r3 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r4 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
 The r2 DSi base was verified with Pico Launcher/DSpico on Nintendo 3DS for
 direct ROM launch, gameplay, menu operation, automatic folder/config creation,
-NVRAM save creation, exit-time saving and save reload. For r3, the new bank
-cache is covered by host regressions and complete DS/DSi builds; hardware
-performance should be checked again after upgrading.
+NVRAM save creation, exit-time saving and save reload. The r3 bank cache is
+covered by host regressions and complete DS/DSi builds. For r4, the One Piece
+combat rendering fix was verified in melonDS with rapid movement; character
+graphics, speed and sound remained normal. Recheck the DSi build on DSpico after
+upgrading because the OBJ path is timing-sensitive on hardware.
 
 Run `python3 tools/validate_localization.py` before building. It verifies the
 translation table, binary font structure, duplicate keys, and complete

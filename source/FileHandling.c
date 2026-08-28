@@ -22,6 +22,7 @@
 #include "Localization.h"
 #include "Cheats.h"
 #include "DspicoRomCache.h"
+#include "PaletteRaster.h"
 
 extern u8 flashMemChanged;		// From FlashMemory.s
 
@@ -601,6 +602,7 @@ bool loadGame(const char *gameName) {
 			setEmuSpeed(0);
 			checkMachine();
 			loadCart();
+			paletteRasterConfigure(gGameHeader);
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
 			drawText("D5 cartridge ready", 15, 0);
 #endif
@@ -659,6 +661,7 @@ void checkMachine() {
 
 //---------------------------------------------------------------------------------
 void ejectCart() {
+	paletteRasterConfigure(NULL);
 	cheatsReset();
 	dspicoRomCacheDisable();
 	gRomSize = 0x200000;

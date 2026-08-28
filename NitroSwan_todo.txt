@@ -74,8 +74,6 @@ Games With Glitches:
 		* Changes palette per line.
 	Final Lap Special, road colors incorrect.
 		* Changes palette per line.
-	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect sky color.
-		* Changes palette per line.
 	Mahjong Touryuumon, speed too fast.
 		* Apparently it sets the ROM waitstate to 1(?).
 	Makaimura, gargoyles in intro should not show up on the right, first boss sprites are glitchy.
@@ -92,6 +90,8 @@ Games With Glitches:
 		* Needs all 1024 tiles in 4color mode.
 
 Games With Glitches Fixed:
+	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect sky color.
+		* Fixed with a bounded BG palette delta replay.
 	Battle Spirits, missing status bar.
 		* Changes tilemap address.
 	Cardcaptor Sakura, book dissolve in intro glitches the second time.

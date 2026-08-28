@@ -19,6 +19,7 @@
 #include "InternalEEPROM.h"
 #include "WonderWitch.h"
 #include "WSCart/WSCart.h"
+#include "PaletteRaster.h"
 
 extern u8 flashMemChanged;		// From FlashMemory.s
 
@@ -516,6 +517,7 @@ bool loadGame(const char *gameName) {
 			setEmuSpeed(0);
 			checkMachine();
 			loadCart();
+			paletteRasterConfigure(gGameHeader);
 			setupEmuBackground();
 			gameInserted = true;
 			if (emuSettings & AUTOLOAD_NVRAM) {
@@ -562,6 +564,7 @@ void checkMachine() {
 
 //---------------------------------------------------------------------------------
 void ejectCart() {
+	paletteRasterConfigure(NULL);
 	gRomSize = 0x200000;
 	memset((void *)romSpacePtr, -1, gRomSize);
 	gameInserted = false;

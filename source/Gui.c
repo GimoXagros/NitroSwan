@@ -17,6 +17,7 @@
 #include "WSBottom.h"
 #include "WSCBottom.h"
 #include "SCBottom.h"
+#include "PaletteRaster.h"
 
 #define EMUVERSION "V0.7.7 2026-08-12"
 
@@ -293,6 +294,7 @@ void ejectGame() {
 void resetGame() {
 	checkMachine();
 	loadCart();
+	paletteRasterConfigure(gGameHeader);
 	setupEmuBackground();
 	powerIsOn = true;
 }

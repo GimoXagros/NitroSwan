@@ -20,6 +20,7 @@
 	.global GFX_BG1CNT
 	.global EMUPALBUFF
 	.global MAPPED_BNW
+	.global MAPPED_RGB
 	.global frameTotal
 	.global sphinx0
 
@@ -677,6 +678,9 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	ldr r0,tmpOamBuffer			;@ Destination
 	bl wsvConvertSprites
 	bl paletteTxAll
+	stmfd sp!,{spxptr,lr}			;@ C may clobber r12/spxptr.
+	bl paletteRasterFrameComplete
+	ldmfd sp!,{spxptr,lr}
 ;@--------------------------
 
 	adr r0,tmpOamBuffer

@@ -23,6 +23,7 @@
 	.global stepScanLine
 	.global cpuInit
 	.global cpuReset
+	.global updateFetchRegion
 
 	.syntax unified
 	.arm
@@ -158,8 +159,33 @@ cpuInit:					;@ Called by machineInit
 	str r0,[v30ptr,#v30IrqVectorFunc]
 	ldr r0,=setBusStatus
 	str r0,[v30ptr,#v30BusStatusFunc]
+	ldr r0,=updateFetchRegion
+	ldr r1,=v30FetchRegionFunc
+	str r0,[r1]
 
 	ldmfd sp!,{v30ptr,lr}
+	bx lr
+;@----------------------------------------------------------------------------
+updateFetchRegion:			;@ r0=physical address, r1=mapped host pointer
+;@----------------------------------------------------------------------------
+	bic v30cyc,v30cyc,#FETCH_CART_ROM_FLAG | FETCH_WAIT_ACTIVE_FLAG
+	cmp r0,#0x20000000			;@ $00000-$1FFFF are RAM/SRAM.
+	bxlo lr
+
+	;@ The boot ROM overlays the top cartridge address range. Identify it from
+	;@ the mapped pointer so banked ROM remains physical-address based while
+	;@ internal/external BIOS fetches remain excluded.
+	ldr r2,=biosBase
+	ldr r2,[r2]
+	cmp r1,r2
+	blo 0f
+	sub r3,r1,r2
+	cmp r3,#0x2000				;@ Maximum WSC/SwanCrystal boot ROM size.
+	bxlo lr
+0:
+	orr v30cyc,v30cyc,#FETCH_CART_ROM_FLAG
+	tst v30cyc,#FETCH_ROM_WAIT_FLAG
+	orrne v30cyc,v30cyc,#FETCH_WAIT_ACTIVE_FLAG
 	bx lr
 ;@----------------------------------------------------------------------------
 cpuReset:					;@ Called by loadCart/resetGame, r0 = type

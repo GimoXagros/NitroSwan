@@ -26,6 +26,111 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertNotIn("paletteRaster", memory)
         self.assertIn("onePieceVideoFixEnabled", video)
 
+        is_one_piece = lambda publisher, color, game_id, revision, checksum: (
+            publisher == 0x01
+            and color == 0x01
+            and game_id == 0x29
+            and revision == 0x00
+            and checksum == 0xFD2E
+        )
+        self.assertTrue(is_one_piece(0x01, 0x01, 0x29, 0x00, 0xFD2E))
+        self.assertFalse(is_one_piece(0x01, 0x01, 0x28, 0x00, 0xFD2E))
+        self.assertFalse(is_one_piece(0x01, 0x01, 0x29, 0x00, 0xFD2F))
+
+    def test_one_piece_backdrop_uses_palette_zero_without_indexing_palette_ram_zero(self):
+        raster = (ROOT / "source" / "PaletteRaster.c").read_text(encoding="utf-8")
+        self.assertIn("previousBackdrop = backdropRawColor(palette);", raster)
+        self.assertIn("(PaletteDelta){(u8)line, 0, mapColor(backdrop)}", raster)
+        self.assertIn("Index 0 is the DS backdrop", raster)
+        self.assertIn(
+            "for (unsigned int index = 1; index < WS_BG_COLORS; index++)", raster
+        )
+        self.assertIn(
+            "for (unsigned int index = 0; index < WS_BG_COLORS; index++)", raster
+        )
+
+    def test_backdrop_event_model_is_bounded_and_preserves_scanline_order(self):
+        capacity = 384
+        previous = 0x001
+        events = []
+        dropped = 0
+        for line in range(1, 144):
+            backdrop = (line * 17) & 0xFFF
+            if backdrop == previous:
+                continue
+            previous = backdrop
+            if len(events) < capacity:
+                events.append((line, 0, backdrop))
+            else:
+                dropped += 1
+
+        self.assertEqual(len(events), 143)
+        self.assertEqual(dropped, 0)
+        self.assertEqual([event[0] for event in events], sorted(e[0] for e in events))
+        self.assertTrue(all(event[1] == 0 for event in events))
+
+        overflow_capacity = 8
+        overflow_events = events[:overflow_capacity]
+        overflow_dropped = len(events) - len(overflow_events)
+        self.assertEqual(len(overflow_events), overflow_capacity)
+        self.assertGreater(overflow_dropped, 0)
+
+    def test_synthetic_palette_capture_and_replay_matches_ws_scanlines(self):
+        ds_game_top = (192 - 144) // 2
+        capacity = 384
+        base = {0: 0x001, 1: 0x111, 2: 0x222}
+        ws_changes = {
+            3: {0: 0x123},
+            27: {2: 0x456},
+            91: {0: 0x789, 1: 0xABC},
+        }
+        events = []
+        for line in range(144):
+            for index, color in ws_changes.get(line, {}).items():
+                if len(events) < capacity:
+                    events.append((line, index, color))
+
+        replay = dict(base)
+        observed = {}
+        cursor = 0
+        for ws_line in range(144):
+            while cursor < len(events) and events[cursor][0] == ws_line:
+                _, index, color = events[cursor]
+                replay[index] = color
+                cursor += 1
+            observed[ds_game_top + ws_line] = dict(replay)
+
+        self.assertEqual(observed[24][0], 0x001)
+        self.assertEqual(observed[27][0], 0x123)
+        self.assertEqual(observed[51][2], 0x456)
+        self.assertEqual(observed[115][0], 0x789)
+        self.assertEqual(observed[115][1], 0xABC)
+        self.assertEqual(cursor, len(events))
+
+    def test_triple_buffer_ownership_never_reuses_active_or_ready(self):
+        def next_free(active, ready):
+            for index in range(3):
+                if index != active and index != ready:
+                    return index
+            return 0
+
+        for active in (-1, 0, 1, 2):
+            for ready in (-1, 0, 1, 2):
+                if active == ready and active >= 0:
+                    continue
+                capture = next_free(active, ready)
+                self.assertNotEqual(capture, active)
+                self.assertNotEqual(capture, ready)
+
+    def test_vcount_mapping_and_vblank_base_restore_contracts(self):
+        raster = (ROOT / "source" / "PaletteRaster.c").read_text(encoding="utf-8")
+        main = (ROOT / "source" / "Main.c").read_text(encoding="utf-8")
+        self.assertIn("#define DS_GAME_TOP ((SCREEN_HEIGHT - WS_VISIBLE_LINES) / 2)", raster)
+        self.assertIn("SetYtrigger(DS_GAME_TOP + active->delta[0].line);", raster)
+        self.assertIn("BG_PALETTE[index] = active->base[index];", raster)
+        vblank = main[main.index("void myVblank(void)") : main.index("int main(")]
+        self.assertLess(vblank.index("vblIrqHandler();"), vblank.index("paletteRasterVBlank();"))
+
     def test_palette_and_obj_buffers_keep_the_release_contracts(self):
         gfx = (ROOT / "source" / "Gfx.s").read_text(encoding="utf-8")
         video = (ROOT / "source" / "Sphinx" / "WSVideo.s").read_text(encoding="utf-8")
@@ -37,6 +142,9 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("bleq dmaSprites", video)
         self.assertIn("drawFrameGfxAtVBlank", video)
         self.assertNotIn("PALETTE_RASTER_NO_FRAME_CALL", gfx)
+        self.assertIn("REG_DMA3CNT_H", gfx)
+        self.assertIn("dmaWinInOut", gfx)
+        self.assertIn("REG_WIN0H", gfx)
 
 
 if __name__ == "__main__":

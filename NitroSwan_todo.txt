@@ -91,7 +91,7 @@ Games With Glitches:
 
 Games With Glitches Fixed:
 	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect sky color.
-		* Fixed with a bounded BG palette delta replay.
+		* Fixed with bounded BG palette and background-color/backdrop deltas.
 	Battle Spirits, missing status bar.
 		* Changes tilemap address.
 	Cardcaptor Sakura, book dissolve in intro glitches the second time.

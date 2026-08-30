@@ -31,9 +31,17 @@ static volatile u16 replayCursor;
 static bool rasterEnabled;
 bool wsvScanlineCallbackEnabled;
 static u16 previousPalette[WS_BG_COLORS];
+static u16 previousBackdrop;
 
 static inline u16 mapColor(u16 rawColor) {
 	return MAPPED_RGB[rawColor & 0x0FFF];
+}
+
+static inline u16 backdropRawColor(const u16 *palette) {
+	if ((sphinx0.lcdControl & 1) == 0) {
+		return sphinx0.defaultBgCol & 0x0FFF;
+	}
+	return palette[sphinx0.bgColor] & 0x0FFF;
 }
 
 static void stopReplayIrq(void) {
@@ -43,7 +51,8 @@ static void stopReplayIrq(void) {
 
 static void snapshotBase(PaletteDeltaFrame *frame) {
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
-	frame->base[0] = EMUPALBUFF[0];
+	previousBackdrop = backdropRawColor(palette);
+	frame->base[0] = mapColor(previousBackdrop);
 	for (unsigned int index = 1; index < WS_BG_COLORS; index++) {
 		const u16 rawColor = palette[index];
 		previousPalette[index] = rawColor;
@@ -92,12 +101,25 @@ void paletteRasterCaptureLine(int line) {
 	}
 
 	PaletteDeltaFrame *frame = &frames[captureFrame];
+	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
 	if (line == 0) {
 		snapshotBase(frame);
 		return;
 	}
 
-	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
+	const u16 backdrop = backdropRawColor(palette);
+	if (backdrop != previousBackdrop) {
+		previousBackdrop = backdrop;
+		if (frame->count < MAX_BG_PALETTE_DELTAS) {
+			// Index 0 is the DS backdrop, not WonderSwan palette RAM color 0.
+			frame->delta[frame->count++] =
+				(PaletteDelta){(u8)line, 0, mapColor(backdrop)};
+		}
+		else {
+			frame->dropped++;
+		}
+	}
+
 	for (unsigned int index = 1; index < WS_BG_COLORS; index++) {
 		const u16 rawColor = palette[index];
 		if (rawColor == previousPalette[index]) {
@@ -142,7 +164,7 @@ void paletteRasterVBlank(void) {
 	readyFrame = -1;
 	PaletteDeltaFrame *active = &frames[activeFrame];
 #if PALETTE_RASTER_DIAGNOSTIC == PALETTE_RASTER_BG_ONLY
-	for (unsigned int index = 1; index < WS_BG_COLORS; index++) {
+	for (unsigned int index = 0; index < WS_BG_COLORS; index++) {
 		BG_PALETTE[index] = active->base[index];
 	}
 #endif

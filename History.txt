@@ -1,7 +1,7 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-Unreleased (post V0.7.7-custom.r4)
+V0.7.7-custom.r5 - 2026-08-30 (GimoXagros custom build)
 	Implemented the cartridge ROM opcode/immediate-fetch wait state selected by
 	I/O register $A0 bit 3. The cached timing flag applies only while the physical
 	V30 PC maps cartridge ROM, leaving data reads, RAM, SRAM and BIOS unchanged.
@@ -10,8 +10,8 @@ Unreleased (post V0.7.7-custom.r4)
 	WonderSwan background-color register value as bounded DS backdrop palette events.
 	Kept WonderSwan palette RAM color 0, transparent BG entries, OBJ palette handling,
 	the existing sprite latch and 4bpp OBJ double buffer unchanged.
-	Confirmed the sky gradient and intact character graphics in melonDS; final
-	DSpico hardware confirmation remains pending before release.
+	Confirmed the sky gradient, intact character graphics, normal speed and sound
+	in melonDS and on DSpico hardware. Mahjong Touryuumon also runs normally.
 
 V0.7.7-custom.r4 - 2026-08-29 (GimoXagros custom build)
 	Added the first title-bounded BG scanline palette replay path for From TV

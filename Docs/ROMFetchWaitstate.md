@@ -34,7 +34,7 @@ still proves that the game enables the ROM wait state.
 
 `source/Memory.s` is intentionally unchanged.  In particular, the
 `cpuWriteMem20` r0/r1 preservation contract and all normal data-access paths
-remain the custom.r4 paths.
+remain the custom.r5 paths.
 
 ## Mahjong evidence
 

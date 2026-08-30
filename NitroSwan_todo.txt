@@ -1,4 +1,4 @@
-NitroSwan Todo (v0.7.7-custom.r4 review)
+NitroSwan Todo (post v0.7.7-custom.r4 review)
 
 	Completed through custom.r4:
 	* Fixed 16KB RAM behaviour on mono consoles.
@@ -11,13 +11,17 @@ NitroSwan Todo (v0.7.7-custom.r4 review)
 	* Auto-created /nitroswan and default settings.cfg; hidden folders remain usable.
 	* Fixed Pico Loader first-ROM reads and direct-launch NVRAM save paths.
 	* Enabled and exposed automatic NVRAM saving, including save-on-exit.
-	* Fixed One Piece Grand Battle Swan Colosseum battle sky and OBJ tile tearing
-	  with a title-bounded BG palette delta replay and 4bpp OBJ double buffer.
+	* Fixed One Piece Grand Battle Swan Colosseum OBJ tile tearing on hardware
+	  with a title-bounded 4bpp OBJ double buffer and sprite latch.
+	* Added the missing background-color-register replay to DS BG_PALETTE[0]. The
+	  battle sky is correct in melonDS; final DSpico hardware confirmation is pending.
 	  This does not complete the general per-line palette task for other games.
+	* Added cached cartridge opcode/immediate-fetch waitstates for $A0 bit 3.
+	  Mahjong Touryuumon speed, sound and input are confirmed normal on DSpico.
 
-	Next work plan after custom.r4 (priority order):
-	1. Capture hardware timing vectors and add opcode-fetch ROM waitstates without
-	   adding work to every ROM read. Primary target: Mahjong Touryuumon speed.
+	Next work plan after the current candidate (priority order):
+	1. Run the standalone opcode-fetch timing ROM on WonderSwan hardware and retain
+	   the captured vectors as a regression reference. The game-level fix is complete.
 	2. Add per-line palette changes for Digimon, Final Lap and Rockman; keep the
 	   One Piece-specific path isolated unless shared hardware vectors justify it.
 	3. Implement efficient sprite-window clipping for Final Fantasy, Makaimura,
@@ -100,8 +104,9 @@ Games With Glitches:
 		* Changes palette per line.
 	Final Lap Special, road colors incorrect.
 		* Changes palette per line.
-	Mahjong Touryuumon, speed too fast.
-		* Apparently it sets the ROM waitstate to 1(?).
+	From TV Animation One Piece - Grand Battle Swan Colosseum, battle sky follow-up.
+		* Background-color/backdrop replay is correct in melonDS; DSpico hardware
+		  confirmation is still required. OBJ tile tearing is hardware-confirmed fixed.
 	Makaimura, gargoyles in intro should not show up on the right, first boss sprites are glitchy.
 		* Sprite Window and...?
 	Neon Genesis Evangelion, sprites overlap avatar images.
@@ -116,9 +121,12 @@ Games With Glitches:
 		* Needs all 1024 tiles in 4color mode.
 
 Games With Glitches Fixed:
-	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect sky color
-	and character tiles breaking during rapid movement.
-		* Fixed with bounded BG palette deltas and synchronized 4bpp OBJ buffering.
+	Mahjong Touryuumon, speed too fast.
+		* Fixed in the post-r4 candidate by honoring $A0 bit 3 for instruction-stream
+		  ROM fetches; speed, sound and input are hardware-confirmed.
+	From TV Animation One Piece - Grand Battle Swan Colosseum, character tiles
+	breaking during rapid movement.
+		* Fixed on hardware with synchronized 4bpp OBJ buffering and sprite latch.
 	Battle Spirits, missing status bar.
 		* Changes tilemap address.
 	Cardcaptor Sakura, book dissolve in intro glitches the second time.

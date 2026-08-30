@@ -1,9 +1,22 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+Unreleased (post V0.7.7-custom.r4)
+	Implemented the cartridge ROM opcode/immediate-fetch wait state selected by
+	I/O register $A0 bit 3. The cached timing flag applies only while the physical
+	V30 PC maps cartridge ROM, leaving data reads, RAM, SRAM and BIOS unchanged.
+	Confirmed normal Mahjong Touryuumon speed, sound and input on DSpico hardware.
+	Corrected the remaining One Piece battle-sky error by recording the selected
+	WonderSwan background-color register value as bounded DS backdrop palette events.
+	Kept WonderSwan palette RAM color 0, transparent BG entries, OBJ palette handling,
+	the existing sprite latch and 4bpp OBJ double buffer unchanged.
+	Confirmed the sky gradient and intact character graphics in melonDS; final
+	DSpico hardware confirmation remains pending before release.
+
 V0.7.7-custom.r4 - 2026-08-29 (GimoXagros custom build)
-	Fixed the battle sky palette in From TV Animation One Piece - Grand Battle
-	Swan Colosseum with a title-bounded BG scanline palette replay path.
+	Added the first title-bounded BG scanline palette replay path for From TV
+	Animation One Piece - Grand Battle Swan Colosseum. A later post-r4 fix was
+	required for the separately selected background-color/backdrop register.
 	Recorded palette changes in a bounded triple-buffered delta list without
 	expanding EMUPALBUFF or reusing DMA3, which remains dedicated to HBlank windows.
 	Latched the target's sprite table at the hardware-compatible line boundary.

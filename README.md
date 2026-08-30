@@ -31,11 +31,13 @@ core.
   실시간 경로는 실기에서 검증된 `0.7.7-custom` 동작으로 복원했습니다.
 - 알려진 게임 전용 CPU idle-loop 속도핵을 다시 활성화했습니다. 기본값은
   꺼짐이며 `Options > Machine > Cpu Speed Hacks`에서 켤 수 있습니다.
-- `From TV Animation One Piece - Grand Battle Swan Colosseum`의 전투 화면에서
-  발생하던 잘못된 하늘색과 캐릭터 타일 깨짐을 게임 전용 영상 경로로
-  수정했습니다. BG 팔레트 변화는 bounded triple buffer로 재생하며, 4bpp OBJ
-  타일은 VBlank 완료 후 별도 VRAM 은행에 준비해 OAM과 함께 전환합니다.
-  OBJ 팔레트 raster와 DMA3는 사용하지 않으므로 기존 HBlank 창 처리를 유지합니다.
+- `From TV Animation One Piece - Grand Battle Swan Colosseum`의 캐릭터 타일
+  깨짐은 게임 전용 4bpp OBJ 이중 버퍼와 sprite latch로 수정했습니다. 후속
+  개발 빌드는 스캔라인별 WonderSwan background-color register를 DS의
+  `BG_PALETTE[0]` backdrop으로 재생해 전투 하늘 그라데이션도 복원합니다.
+  두 경로 모두 bounded triple buffer를 사용하며 OBJ 팔레트 raster와 DMA3는
+  사용하지 않으므로 기존 HBlank 창 처리를 유지합니다. 하늘 수정은 melonDS에서
+  확인됐으며 DSpico 실기 최종 확인 전까지 개발 빌드 상태입니다.
 
 ### Which build should I use? / 빌드 선택
 

@@ -23,8 +23,12 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("PALETTE_RASTER_BG_ONLY 3", header)
         self.assertNotIn("SPRITE_PALETTE", raster)
         self.assertNotIn("DMA3", raster)
-        self.assertNotIn("paletteRaster", memory)
+        self.assertIn("cmp r0,#0x0FE00000", memory)
+        self.assertIn("bl paletteRasterCapturePaletteWrite", memory)
         self.assertIn("onePieceVideoFixEnabled", video)
+        self.assertIn("#ifdef WS_VIDEO_WRITE_CALLBACK", video)
+        self.assertIn("bl wsvVideoRegisterWriteCallback", video)
+        self.assertNotIn("bl paletteRasterCaptureLine", video)
 
         is_one_piece = lambda publisher, color, game_id, revision: (
             publisher == 0x01
@@ -46,14 +50,60 @@ class GraphicsCoreTests(unittest.TestCase):
     def test_one_piece_backdrop_uses_palette_zero_without_indexing_palette_ram_zero(self):
         raster = (ROOT / "source" / "PaletteRaster.c").read_text(encoding="utf-8")
         self.assertIn("previousBackdrop = backdropRawColor(palette);", raster)
-        self.assertIn("(PaletteDelta){(u8)line, 0, mapColor(backdrop)}", raster)
-        self.assertIn("Index 0 is the DS backdrop", raster)
+        self.assertIn("appendDelta(line + 1, 0, backdrop);", raster)
+        self.assertIn("if (index == sphinx0.bgColor)", raster)
         self.assertIn(
             "for (unsigned int index = 1; index < WS_BG_COLORS; index++)", raster
         )
         self.assertIn(
             "for (unsigned int index = 0; index < WS_BG_COLORS; index++)", raster
         )
+
+        capture = raster[
+            raster.index("void paletteRasterCapturePaletteWrite") :
+            raster.index("void wsvVideoRegisterWriteCallback")
+        ]
+        self.assertNotIn("for (unsigned int index", capture)
+
+    def test_write_time_capture_is_palette_bounded_and_preserves_write_contract(self):
+        memory = (ROOT / "source" / "Memory.s").read_text(encoding="utf-8")
+        hook = memory[memory.index("paletteRamWriteNotify:") : memory.index("cart_WW:")]
+        self.assertIn("cmp r0,#0x0FE00000", hook)
+        self.assertIn("bxcc lr", hook)
+        self.assertIn("ldr r2,=wsvVideoWriteCallbackEnabled", hook)
+        self.assertIn("stmfd sp!,{r0,r1,lr}", hook)
+        self.assertIn("ldmfd sp!,{r0,r1,pc}", hook)
+        self.assertEqual(hook.count("bl paletteRasterCapturePaletteWrite"), 1)
+
+    def test_write_time_delta_model_coalesces_and_maps_to_next_line(self):
+        capacity = 384
+        events = []
+        dropped = 0
+
+        def append(line, index, color):
+            nonlocal dropped
+            for event in reversed(events):
+                if event[0] != line:
+                    break
+                if event[1] == index:
+                    event[2] = color
+                    return
+            if len(events) < capacity:
+                events.append([line, index, color])
+            else:
+                dropped += 1
+
+        # Two byte writes to one palette entry during WS line 12 become one
+        # visible delta on line 13, with the final 12-bit value.
+        append(12 + 1, 7, 0x034)
+        append(12 + 1, 7, 0xA34)
+        append(12 + 1, 0, 0x123)
+        self.assertEqual(events, [[13, 7, 0xA34], [13, 0, 0x123]])
+
+        for ws_line in range(13, 143):
+            append(ws_line + 1, 1 + (ws_line % 127), ws_line & 0xFFF)
+        self.assertEqual(dropped, 0)
+        self.assertTrue(all(1 <= event[0] < 144 for event in events))
 
     def test_backdrop_event_model_is_bounded_and_preserves_scanline_order(self):
         capacity = 384

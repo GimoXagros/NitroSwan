@@ -43,7 +43,7 @@ NITROFSDIR	:=
 # Defines passed to all files
 # ---------------------------
 
-DEFINES		:=	-DARM9 -DNDS -DWSAUDIO_LOW -DPICOLIBC_LONG_LONG_PRINTF_SCANF
+DEFINES		:=	-DARM9 -DNDS -DWSAUDIO_LOW -DWS_VIDEO_WRITE_CALLBACK -DPICOLIBC_LONG_LONG_PRINTF_SCANF
 
 # Optional compatibility profile for DSpico/Pico Loader on Nintendo 3DS.
 ifeq ($(DSPICO_3DS_BUILD),1)

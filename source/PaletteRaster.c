@@ -3,6 +3,7 @@
 
 #include "PaletteRaster.h"
 #include "Cart.h"
+#include "GameIdentity.h"
 #include "Gfx.h"
 
 #define WS_VISIBLE_LINES 144
@@ -80,9 +81,8 @@ static int nextFreeFrame(int active, int ready) {
 
 void paletteRasterConfigure(const WsHeader *header) {
 	const bool isOnePiece = header != NULL &&
-		header->publisher == 0x01 && header->color == 0x01 &&
-		header->gameId == 0x29 && header->gameRev == 0x00 &&
-		header->checksum == 0xFD2E;
+		isOnePieceGrandBattle(header->publisher, header->color,
+			header->gameId, header->gameRev);
 
 	rasterEnabled = isOnePiece;
 	onePieceVideoFixEnabled = isOnePiece;

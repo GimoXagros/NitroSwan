@@ -73,6 +73,21 @@ def main() -> int:
             str(cache_exe),
         ])
         run([str(cache_exe)])
+
+        identity_exe = Path(temp_dir) / ("game_identity_test.exe" if os.name == "nt" else "game_identity_test")
+        run([
+            compiler,
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Isource",
+            "tests/test_game_identity.c",
+            "source/GameIdentity.c",
+            "-o",
+            str(identity_exe),
+        ])
+        run([str(identity_exe)])
     else:
         print("Host C compiler unavailable; C vectors will run in CI, Python vectors passed locally.")
     return 0

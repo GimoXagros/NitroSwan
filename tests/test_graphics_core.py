@@ -16,8 +16,8 @@ class GraphicsCoreTests(unittest.TestCase):
         memory = (ROOT / "source" / "Memory.s").read_text(encoding="utf-8")
         self.assertIn("MAX_BG_PALETTE_DELTAS 384", raster)
         self.assertIn("PALETTE_FRAME_COUNT 3", raster)
-        self.assertIn("header->gameId == 0x29", raster)
-        self.assertIn("header->checksum == 0xFD2E", raster)
+        self.assertIn("isOnePieceGrandBattle(header->publisher, header->color", raster)
+        self.assertNotIn("header->checksum", raster)
         self.assertIn("PALETTE_RASTER_CAPTURE_ONLY 1", header)
         self.assertIn("PALETTE_RASTER_REPLAY_ONLY 2", header)
         self.assertIn("PALETTE_RASTER_BG_ONLY 3", header)
@@ -26,16 +26,22 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertNotIn("paletteRaster", memory)
         self.assertIn("onePieceVideoFixEnabled", video)
 
-        is_one_piece = lambda publisher, color, game_id, revision, checksum: (
+        is_one_piece = lambda publisher, color, game_id, revision: (
             publisher == 0x01
             and color == 0x01
             and game_id == 0x29
-            and revision == 0x00
-            and checksum == 0xFD2E
+            and (revision & 0x7F) == 0x00
         )
-        self.assertTrue(is_one_piece(0x01, 0x01, 0x29, 0x00, 0xFD2E))
-        self.assertFalse(is_one_piece(0x01, 0x01, 0x28, 0x00, 0xFD2E))
-        self.assertFalse(is_one_piece(0x01, 0x01, 0x29, 0x00, 0xFD2F))
+        self.assertTrue(is_one_piece(0x01, 0x01, 0x29, 0x00))
+        self.assertTrue(is_one_piece(0x01, 0x01, 0x29, 0x80))
+        self.assertFalse(is_one_piece(0x01, 0x01, 0x28, 0x00))
+        self.assertFalse(is_one_piece(0x02, 0x01, 0x29, 0x00))
+        self.assertFalse(is_one_piece(0x01, 0x00, 0x29, 0x00))
+        self.assertFalse(is_one_piece(0x01, 0x01, 0x29, 0x01))
+
+        identity = (ROOT / "source" / "GameIdentity.c").read_text(encoding="utf-8")
+        self.assertNotIn("checksum", identity)
+        self.assertIn("(gameRev & 0x7F) == 0x00", identity)
 
     def test_one_piece_backdrop_uses_palette_zero_without_indexing_palette_ram_zero(self):
         raster = (ROOT / "source" / "PaletteRaster.c").read_text(encoding="utf-8")

@@ -286,7 +286,7 @@ ram_WB:						;@ Write ram ($00000-$0FFFF)
 	strb r1,[r2,r0,lsr#12]
 	add r2,r2,#0x10000			;@ Size of wsRAM, ptr to DIRTYTILES.
 	strb r0,[r2,r0,lsr#17]
-	bx lr
+	b paletteRamWriteNotify
 ;@----------------------------------------------------------------------------
 cart_WB:
 ;@----------------------------------------------------------------------------
@@ -338,7 +338,21 @@ dmaWriteMem20W:
 	strh r1,[r2,r3]
 	add r3,r2,#0x10000			;@ Size of wsRAM, ptr to DIRTYTILES.
 	strb r0,[r3,r0,lsr#17]
-	bx lr
+	b paletteRamWriteNotify
+;@----------------------------------------------------------------------------
+paletteRamWriteNotify:		;@ r0/r1 must be preserved for cpuWriteMem20 callers.
+;@ Only the 512-byte WSC palette window may enter C; all other RAM writes return.
+;@----------------------------------------------------------------------------
+	cmp r0,#0x0FE00000
+	bxcc lr
+	ldr r2,=wsvVideoWriteCallbackEnabled
+	ldrb r2,[r2]
+	cmp r2,#0
+	bxeq lr
+	stmfd sp!,{r0,r1,lr}
+	mov r0,r0,lsr#12
+	bl paletteRasterCapturePaletteWrite
+	ldmfd sp!,{r0,r1,pc}
 ;@----------------------------------------------------------------------------
 cart_WW:
 ;@----------------------------------------------------------------------------

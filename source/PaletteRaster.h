@@ -18,10 +18,13 @@ extern "C" {
 #endif
 
 void paletteRasterConfigure(const WsHeader *header);
-void paletteRasterCaptureLine(int line);
+void paletteRasterCapturePaletteWrite(unsigned int address);
+void wsvVideoRegisterWriteCallback(unsigned int port);
 void paletteRasterFrameComplete(void);
 void paletteRasterVBlank(void);
 void paletteRasterVCountIrq(void);
+
+extern bool wsvVideoWriteCallbackEnabled;
 
 #ifdef __cplusplus
 }

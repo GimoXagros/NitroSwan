@@ -30,7 +30,7 @@ static volatile int readyFrame = -1;
 static volatile int activeFrame = -1;
 static volatile u16 replayCursor;
 static bool rasterEnabled;
-bool wsvScanlineCallbackEnabled;
+bool wsvVideoWriteCallbackEnabled;
 static u16 previousPalette[WS_BG_COLORS];
 static u16 previousBackdrop;
 
@@ -66,6 +66,47 @@ static void resetCaptureFrame(PaletteDeltaFrame *frame) {
 	frame->dropped = 0;
 }
 
+static void setBaseColor(PaletteDeltaFrame *frame, unsigned int index, u16 rawColor) {
+	if (index < WS_BG_COLORS) {
+		frame->base[index] = mapColor(rawColor);
+	}
+}
+
+static void appendDelta(unsigned int line, unsigned int index, u16 rawColor) {
+	PaletteDeltaFrame *frame = &frames[captureFrame];
+	const u16 color = mapColor(rawColor);
+	for (int event = frame->count - 1;
+		event >= 0 && frame->delta[event].line == line; event--) {
+		if (frame->delta[event].index == index) {
+			frame->delta[event].color = color;
+			return;
+		}
+	}
+	if (frame->count < MAX_BG_PALETTE_DELTAS) {
+		frame->delta[frame->count++] =
+			(PaletteDelta){(u8)line, (u8)index, color};
+	}
+	else {
+		frame->dropped++;
+	}
+}
+
+static void captureBackdropWrite(void) {
+	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
+	const u16 backdrop = backdropRawColor(palette);
+	if (backdrop == previousBackdrop) {
+		return;
+	}
+	previousBackdrop = backdrop;
+	const u32 line = sphinx0.scanline;
+	if (line < WS_VISIBLE_LINES - 1) {
+		appendDelta(line + 1, 0, backdrop);
+	}
+	else if (line >= WS_VISIBLE_LINES) {
+		setBaseColor(&frames[captureFrame], 0, backdrop);
+	}
+}
+
 static int nextFreeFrame(int active, int ready) {
 	for (int index = 0; index < PALETTE_FRAME_COUNT; index++) {
 		if (index != active && index != ready) {
@@ -81,7 +122,7 @@ void paletteRasterConfigure(const WsHeader *header) {
 			header->gameId, header->gameRev);
 
 	rasterEnabled = isOnePiece;
-	wsvScanlineCallbackEnabled = isOnePiece;
+	wsvVideoWriteCallbackEnabled = isOnePiece;
 	readyFrame = -1;
 	activeFrame = -1;
 	captureFrame = 0;
@@ -95,49 +136,32 @@ void paletteRasterConfigure(const WsHeader *header) {
 	}
 }
 
-void paletteRasterCaptureLine(int line) {
-	if (!rasterEnabled || (unsigned int)line >= WS_VISIBLE_LINES) {
+void paletteRasterCapturePaletteWrite(unsigned int address) {
+	if (!wsvVideoWriteCallbackEnabled || address < 0xFE00 || address > 0xFFFF) {
 		return;
 	}
-
-	PaletteDeltaFrame *frame = &frames[captureFrame];
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
-	if (line == 0) {
-		snapshotBase(frame);
-		return;
-	}
-
-	const u16 backdrop = backdropRawColor(palette);
-	if (backdrop != previousBackdrop) {
-		previousBackdrop = backdrop;
-		if (frame->count < MAX_BG_PALETTE_DELTAS) {
-			// Index 0 is the DS backdrop, not WonderSwan palette RAM color 0.
-			frame->delta[frame->count++] =
-				(PaletteDelta){(u8)line, 0, mapColor(backdrop)};
-		}
-		else {
-			frame->dropped++;
-		}
-	}
-
-	for (unsigned int index = 1; index < WS_BG_COLORS; index++) {
-		const u16 rawColor = palette[index];
-		if (rawColor == previousPalette[index]) {
-			continue;
-		}
+	const unsigned int index = (address - 0xFE00) >> 1;
+	const u16 rawColor = palette[index];
+	const u32 line = sphinx0.scanline;
+	if (index > 0 && index < WS_BG_COLORS && rawColor != previousPalette[index]) {
 		previousPalette[index] = rawColor;
-		if (frame->count < MAX_BG_PALETTE_DELTAS) {
-			frame->delta[frame->count++] =
-				(PaletteDelta){(u8)line, (u8)index, mapColor(rawColor)};
+		if (line < WS_VISIBLE_LINES - 1) {
+			appendDelta(line + 1, index, rawColor);
 		}
-		else {
-			frame->dropped++;
+		else if (line >= WS_VISIBLE_LINES) {
+			setBaseColor(&frames[captureFrame], index, rawColor);
 		}
+	}
+	if (index == sphinx0.bgColor) {
+		captureBackdropWrite();
 	}
 }
 
-void wsvScanlineCallback(int line) {
-	paletteRasterCaptureLine(line);
+void wsvVideoRegisterWriteCallback(unsigned int port) {
+	if (wsvVideoWriteCallbackEnabled && port == 0x01) {
+		captureBackdropWrite();
+	}
 }
 
 void paletteRasterFrameComplete(void) {
@@ -148,6 +172,7 @@ void paletteRasterFrameComplete(void) {
 	readyFrame = captureFrame;
 	captureFrame = nextFreeFrame(activeFrame, readyFrame);
 	resetCaptureFrame(&frames[captureFrame]);
+	snapshotBase(&frames[captureFrame]);
 }
 
 void paletteRasterVBlank(void) {

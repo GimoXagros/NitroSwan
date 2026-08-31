@@ -8,6 +8,14 @@ Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
 filenames, per-game RAM cheats, and accuracy fixes based on the upstream 0.7.7
 core.
 
+> **One Piece modified-ROM notice:** custom.r5 enabled its sky and OBJ
+> compatibility paths with the original ROM checksum. The Japanese original is
+> hardware-verified, but translated or otherwise modified ROMs can have a
+> different checksum and therefore bypass both fixes. The post-r5 candidate
+> replaces that checksum gate with the stable publisher/color/product/revision
+> identity. Original and Korean-patched DSpico validation must both pass before
+> the compatibility issue is marked fixed for all variants.
+
 ## 0.7.7-custom.r5 주요 기능
 
 - Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
@@ -37,7 +45,9 @@ core.
   `BG_PALETTE[0]` backdrop으로 재생해 전투 하늘 그라데이션도 복원합니다.
   두 경로 모두 bounded triple buffer를 사용하며 OBJ 팔레트 raster와 DMA3는
   사용하지 않으므로 기존 HBlank 창 처리를 유지합니다. 전투 하늘과 캐릭터
-  그래픽은 melonDS 및 DSpico 실기에서 정상 동작을 확인했습니다.
+  그래픽은 일본어 원본 ROM의 melonDS 및 DSpico 실기에서 정상 동작을
+  확인했습니다. custom.r5는 원본 checksum에 묶여 있으므로 한글패치 등 수정
+  ROM은 이 경로가 비활성화될 수 있습니다.
 - `Mahjong Touryuumon`이 사용하는 `$A0` cartridge ROM opcode/immediate-fetch
   waitstate를 반영했습니다. 속도·사운드·입력은 DSpico 실기에서 정상 동작을
   확인했습니다.
@@ -185,9 +195,11 @@ The r2 DSi base was verified with Pico Launcher/DSpico on Nintendo 3DS for
 direct ROM launch, gameplay, menu operation, automatic folder/config creation,
 NVRAM save creation, exit-time saving and save reload. The r3 bank cache is
 covered by host regressions and complete DS/DSi builds. The One Piece combat
-character and battle-sky fixes were verified in melonDS and on DSpico hardware;
-graphics, speed and sound remained normal. Mahjong Touryuumon's speed, sound
-and input were also verified on DSpico hardware.
+character and battle-sky fixes were verified for the Japanese original ROM in
+melonDS and on DSpico hardware; graphics, speed and sound remained normal. A
+post-r5 candidate removes the original-checksum identity dependency, but the
+Korean-patched ROM still requires full DSpico matrix validation. Mahjong
+Touryuumon's speed, sound and input were also verified on DSpico hardware.
 
 Run `python3 tools/validate_localization.py` before building. It verifies the
 translation table, binary font structure, duplicate keys, and complete

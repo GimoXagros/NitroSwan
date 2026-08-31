@@ -1,6 +1,18 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r6 - 2026-08-31 (GimoXagros custom build)
+	Found that the r5 One Piece compatibility gate used the original ROM checksum,
+	which disabled both the battle-sky raster and OBJ timing paths for translated
+	or otherwise modified ROMs.
+	Replaced the checksum gate with publisher, color, product ID and the actual
+	7-bit revision. The EEPROM write-protect bit is ignored for product identity.
+	Reworked palette capture to record background-color and $FE00-$FFFF palette RAM
+	changes at their actual write paths instead of scanning 127 entries per line.
+	Confirmed the Japanese original and Korean-patched ROM on DSpico hardware:
+	battle sky, character tiles, rapid movement, status/UI, sound, input and frame
+	pacing all remain normal through repeated battles.
+
 V0.7.7-custom.r5 - 2026-08-30 (GimoXagros custom build)
 	Implemented the cartridge ROM opcode/immediate-fetch wait state selected by
 	I/O register $A0 bit 3. The cached timing flag applies only while the physical
@@ -11,7 +23,9 @@ V0.7.7-custom.r5 - 2026-08-30 (GimoXagros custom build)
 	Kept WonderSwan palette RAM color 0, transparent BG entries, OBJ palette handling,
 	the existing sprite latch and 4bpp OBJ double buffer unchanged.
 	Confirmed the sky gradient, intact character graphics, normal speed and sound
-	in melonDS and on DSpico hardware. Mahjong Touryuumon also runs normally.
+	for the Japanese original ROM in melonDS and on DSpico hardware. This release's
+	exact-checksum gate does not enable those paths for modified ROM variants.
+	Mahjong Touryuumon also runs normally.
 
 V0.7.7-custom.r4 - 2026-08-29 (GimoXagros custom build)
 	Added the first title-bounded BG scanline palette replay path for From TV

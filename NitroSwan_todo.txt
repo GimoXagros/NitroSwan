@@ -1,6 +1,6 @@
-NitroSwan Todo (post v0.7.7-custom.r5 review)
+NitroSwan Todo (post v0.7.7-custom.r6 review)
 
-	Completed through custom.r5:
+	Completed through custom.r6:
 	* Fixed 16KB RAM behaviour on mono consoles.
 	* Fixed RTC invalid values, calendar month lengths, leap years and rollover.
 	* Replaced the global DSpico MPU mapping with a NitroSwan-only 64KB ROM bank
@@ -13,23 +13,24 @@ NitroSwan Todo (post v0.7.7-custom.r5 review)
 	* Enabled and exposed automatic NVRAM saving, including save-on-exit.
 	* Fixed One Piece Grand Battle Swan Colosseum OBJ tile tearing on hardware for
 	  the Japanese original ROM with a title-bounded 4bpp OBJ double buffer and
-	  sprite latch. custom.r5's exact-checksum gate excludes modified ROMs.
+	  sprite latch. custom.r6 selects the path using stable product identity so
+	  modified ROMs are not excluded solely by their checksum.
 	* Added the missing background-color-register replay to DS BG_PALETTE[0]. The
 	  original ROM battle sky and character graphics are correct in melonDS and on
-	  DSpico hardware; modified ROM variants are not yet verified.
+	  DSpico hardware. r6 also verifies the Korean-patched ROM.
 	  This does not complete the general per-line palette task for other games.
 	* Added cached cartridge opcode/immediate-fetch waitstates for $A0 bit 3.
 	  Mahjong Touryuumon speed, sound and input are confirmed normal on DSpico.
 
-	Current post-r5 candidate:
+	Completed in custom.r6:
 	* Removed the One Piece exact-checksum identity dependency. Publisher, color,
 	  product ID and the low 7 revision bits now select both compatibility paths.
 	* Replaced per-line palette scanning with bounded write-time events for the
 	  background-color register and WSC palette RAM only.
-	* Original and Korean-patched DSpico validation is pending. Do not mark either
-	  One Piece graphics issue fixed for all variants until both columns pass.
+	* Japanese original and Korean-patched DSpico validation passed for sky,
+	  character tiles, rapid movement, status/UI, sound, input and frame pacing.
 
-	Next work plan after custom.r5 (priority order):
+	Next work plan after custom.r6 (priority order):
 	1. Run the standalone opcode-fetch timing ROM on WonderSwan hardware and retain
 	   the captured vectors as a regression reference. The game-level fix is complete.
 	2. Add per-line palette changes for Digimon, Final Lap and Rockman; keep the
@@ -104,10 +105,6 @@ Games Not Working Fixed:
 		* Waiting on sample playing.
 
 Games With Glitches:
-	From TV Animation One Piece - Grand Battle Swan Colosseum, modified ROM variants.
-		* custom.r5 ties both sky and OBJ paths to original checksum 0xFD2E. The
-		  post-r5 candidate uses stable header identity; original and Korean-patched
-		  hardware validation remains pending.
 	Dicing Knight. shadows are in front of player.
 		* Sprite priority is wrong for sprites that are above FG.
 	Digimon - Anode Tamer & Cathode Tamer, missing background gradient in battles.
@@ -135,6 +132,13 @@ Games With Glitches Fixed:
 	Mahjong Touryuumon, speed too fast.
 		* Fixed in custom.r5 by honoring $A0 bit 3 for instruction-stream
 		  ROM fetches; speed, sound and input are hardware-confirmed.
+	From TV Animation One Piece - Grand Battle Swan Colosseum, character tiles
+	breaking during rapid movement, including the Korean-patched ROM.
+		* Fixed on hardware with checksum-independent product identity, synchronized
+		  4bpp OBJ buffering and sprite latch.
+	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect battle sky.
+		* Fixed on original and Korean-patched ROMs with write-time background-color
+		  and palette RAM events replayed through DS BG_PALETTE[0].
 	Battle Spirits, missing status bar.
 		* Changes tilemap address.
 	Cardcaptor Sakura, book dissolve in intro glitches the second time.

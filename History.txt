@@ -1,7 +1,7 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-Unreleased (post V0.7.7-custom.r5)
+V0.7.7-custom.r6 - 2026-08-31 (GimoXagros custom build)
 	Found that the r5 One Piece compatibility gate used the original ROM checksum,
 	which disabled both the battle-sky raster and OBJ timing paths for translated
 	or otherwise modified ROMs.
@@ -9,8 +9,9 @@ Unreleased (post V0.7.7-custom.r5)
 	7-bit revision. The EEPROM write-protect bit is ignored for product identity.
 	Reworked palette capture to record background-color and $FE00-$FFFF palette RAM
 	changes at their actual write paths instead of scanning 127 entries per line.
-	Original and Korean-patched DSpico validation is pending; neither modified-ROM
-	graphics issue is considered fully fixed until both variants pass the matrix.
+	Confirmed the Japanese original and Korean-patched ROM on DSpico hardware:
+	battle sky, character tiles, rapid movement, status/UI, sound, input and frame
+	pacing all remain normal through repeated battles.
 
 V0.7.7-custom.r5 - 2026-08-30 (GimoXagros custom build)
 	Implemented the cartridge ROM opcode/immediate-fetch wait state selected by

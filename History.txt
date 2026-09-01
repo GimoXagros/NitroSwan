@@ -12,6 +12,9 @@ Unreleased - WSC video core
 	switch; unchanged frames neither copy nor swap banks.
 	Limited sparse BG replay to WSC palette entries 0-127. Entries 128-255 feed the
 	OBJ palette and are not replayed into the upper half of the DS BG palette.
+	Added a conditional 32KB decoded-BG tile generation in unused main BG VRAM.
+	BG0/BG1 character bases now switch only at VBlank, keeping tiles aligned with
+	the displayed scroll, window, tile-map and palette generation during transitions.
 	Restricted 4bpp OBJ writes to the 512 tiles addressable by sprite attributes,
 	preventing BG-only tiles 512-1023 from overwriting the other OBJ generation.
 	Added 2bpp/4bpp format-change invalidation and aggregate renderer metrics.

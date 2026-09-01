@@ -39,6 +39,9 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	  to the 512 tiles addressable by sprite attributes.
 	* Limited sparse BG replay to WSC palette entries 0-127. Entries 128-255 feed
 	  OBJ palette conversion and must not overwrite DS BG palette slots.
+	* Added a conditional off-screen 32KB BG character bank. Decoded tiles are
+	  prepared outside the displayed bank and BG0/BG1 switch generations at VBlank,
+	  avoiding live tile replacement during rapid selection/battle transitions.
 	* Host regressions, DS/DSi builds and melonDS boot/intro checks pass for Battle
 	  Spirit 1.0/1.5/Frontier, One Piece original/patched and two regression titles.
 	  Rapid combat movement, audio and frame pacing still require DSpico testing.

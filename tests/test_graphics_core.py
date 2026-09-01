@@ -174,6 +174,7 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("SetYtrigger(DS_GAME_TOP + active->delta[0].line);", raster)
         self.assertIn("BG_PALETTE[index] = active->base[index];", raster)
         vblank = main[main.index("void myVblank(void)") : main.index("int main(")]
+        self.assertLess(vblank.index("videoTileBufferVBlank();"), vblank.index("vblIrqHandler();"))
         self.assertLess(vblank.index("vblIrqHandler();"), vblank.index("paletteRasterVBlank();"))
 
     def test_palette_and_obj_buffers_keep_the_release_contracts(self):
@@ -186,6 +187,9 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("sourceOffset ^ 0x200", obj)
         self.assertIn("(format & 0xC0) == 0xC0", obj)
         self.assertIn("OBJ_BANK_BYTES", obj)
+        self.assertIn("BG_BANK_BYTES 0x8000", obj)
+        self.assertIn("wsvBgTileOffset", obj)
+        self.assertIn("otherwise unused main BG VRAM", obj)
         self.assertIn("Clean frames do not copy or swap", obj)
         self.assertNotIn("memCopy", obj)
         self.assertIn("cmp r1,#0x4000", video)
@@ -224,6 +228,31 @@ class GraphicsCoreTests(unittest.TestCase):
         old_bank = current_bank
         self.assertEqual(commit({}), 0)
         self.assertEqual(current_bank, old_bank)
+
+    def test_bg_generation_switches_only_after_a_coherent_bank_is_built(self):
+        tile_count = 1024
+        banks = [[0] * tile_count, [0] * tile_count]
+        displayed = 0
+        prepared = 0
+
+        def prepare(changes):
+            nonlocal prepared
+            if not changes:
+                return False
+            destination = prepared ^ 1
+            banks[destination] = list(banks[prepared])
+            for tile, value in changes.items():
+                banks[destination][tile] = value
+            prepared = destination
+            return True
+
+        self.assertTrue(prepare({12: 120, 900: 9000}))
+        self.assertEqual(displayed, 0)
+        displayed = prepared  # VBlank character-base switch.
+        self.assertEqual(banks[displayed][12], 120)
+        self.assertEqual(banks[displayed][900], 9000)
+        self.assertFalse(prepare({}))
+        self.assertEqual(prepared, displayed)
 
 
 if __name__ == "__main__":

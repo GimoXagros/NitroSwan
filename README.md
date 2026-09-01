@@ -17,7 +17,9 @@ core.
 > the bounded raster path for every title, while 4bpp OBJ tiles and the sprite
 > table are committed from matching frame generations. A coherent 16KB OBJ bank
 > is seeded only when dirty tiles require a generation switch; unchanged frames
-> neither copy nor switch banks.
+> neither copy nor switch banks. Decoded BG tiles now use a separate 32KB
+> off-screen character bank and switch BG0/BG1 character bases only at VBlank,
+> preventing transition tiles from changing underneath the displayed frame.
 > Battle Spirit 1.0/1.5/Frontier and both One Piece ROM variants pass melonDS
 > boot/intro checks at 60/60 FPS. DSpico combat validation is still pending.
 

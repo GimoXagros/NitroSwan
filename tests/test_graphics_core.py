@@ -187,6 +187,9 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("sourceOffset ^ 0x200", obj)
         self.assertIn("(format & 0xC0) == 0xC0", obj)
         self.assertIn("OBJ_BANK_BYTES", obj)
+        self.assertIn("wsvObjTileSnapshots[OBJ_BANK_BYTES * 2]", obj)
+        self.assertIn("wsvObjReadyTileOffset = wsvObjTileOffset", obj)
+        self.assertIn("memcpy((void *)SPRITE_GFX, source, OBJ_BANK_BYTES)", obj)
         self.assertIn("BG_BANK_BYTES 0x8000", obj)
         self.assertIn("wsvBgTileOffset", obj)
         self.assertIn("wsvBgReadyTileOffset", obj)
@@ -195,10 +198,13 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("wsvBgReadyTileOffset", vblank_switch)
         self.assertNotIn("wsvBgTileOffset >>", vblank_switch)
         self.assertIn("otherwise unused main BG VRAM", obj)
-        self.assertIn("Clean frames do not copy or swap", obj)
+        self.assertIn("Clean frames do not copy", obj)
         self.assertNotIn("memCopy", obj)
         self.assertIn("cmp r1,#0x4000", video)
         self.assertIn("strcc r3,[r8,r1]", video)
+        self.assertIn(".long wsvObjTileSnapshots", video)
+        sprite_convert = video[video.index("wsvConvertSprites:"):video.index("#ifdef GBA", video.index("wsvConvertSprites:"))]
+        self.assertNotIn("wsvObjTileOffset", sprite_convert)
         self.assertNotIn("onePiece", video)
         self.assertNotIn("bl dmaSprites", frame)
         self.assertIn("bl dmaSprites", video[video.index("latchSpritesForFrame:"):video.index("endFrame:")])
@@ -243,6 +249,36 @@ class GraphicsCoreTests(unittest.TestCase):
         old_bank = current_bank
         self.assertEqual(commit({}), 0)
         self.assertEqual(current_bank, old_bank)
+
+    def test_partial_next_frame_cannot_overwrite_published_obj_snapshot(self):
+        snapshots = [[0] * 512, [0] * 512]
+        build = 0
+        ready = 0
+        vram = [0] * 512
+
+        def begin_frame(changes):
+            nonlocal build
+            if not changes:
+                return
+            destination = build ^ 1
+            snapshots[destination] = list(snapshots[build])
+            for tile, value in changes.items():
+                snapshots[destination][tile] = value
+            build = destination
+
+        # Frame A completes and is the only generation eligible for VBlank.
+        begin_frame({7: 100})
+        ready = build
+
+        # Frame B begins before host VBlank, but writes only its other RAM bank.
+        begin_frame({7: 200, 8: 201})
+        self.assertNotEqual(build, ready)
+        self.assertEqual(snapshots[ready][7], 100)
+
+        # Host VBlank publishes exactly frame A into fixed OBJ VRAM.
+        vram[:] = snapshots[ready]
+        self.assertEqual(vram[7], 100)
+        self.assertEqual(vram[8], 0)
 
     def test_bg_generation_switches_only_after_a_coherent_bank_is_built(self):
         tile_count = 1024

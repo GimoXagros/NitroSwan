@@ -15,9 +15,11 @@ core.
 > **Unreleased video-core work:** `agent/wsc-video-core-fix` removes the title
 > gate from renderer correctness. Color-hardware palette/backdrop writes now use
 > the bounded raster path for every title, while 4bpp OBJ tiles and the sprite
-> table are committed from matching frame generations. A coherent 16KB OBJ bank
-> is seeded only when dirty tiles require a generation switch; unchanged frames
-> neither copy nor switch banks. Decoded BG tiles now use a separate 32KB
+> table are committed from matching frame generations. Two coherent 16KB decoded
+> OBJ snapshots are prepared in main RAM, and only the last completed generation
+> is copied to fixed OBJ VRAM at host VBlank. This prevents a partial next 75 Hz
+> frame from overwriting the 60 Hz displayed sprites; clean generations do not
+> seed or publish a snapshot. Decoded BG tiles now use a separate 32KB
 > off-screen character bank and switch BG0/BG1 character bases only at VBlank,
 > preventing transition tiles from changing underneath the displayed frame.
 > The 60 Hz DSpico path can begin the next 75 Hz WS frame before host VBlank,

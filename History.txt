@@ -7,9 +7,11 @@ Unreleased - WSC video core
 	raster path on color hardware; frames without events do not enable VCOUNT IRQs.
 	Latched every sprite table after visible line 142 and converted dirty tile data
 	at line 0 so OAM and OBJ data use the same emulated frame boundary.
-	Replaced the unconditional per-frame 16KB OBJ copy with conditional coherent-bank
-	seeding. A complete bank is copied only when dirty tiles require a generation
-	switch; unchanged frames neither copy nor swap banks.
+	Moved the two decoded 16KB OBJ generations to main RAM. Dirty tiles conditionally
+	seed and update the off-screen snapshot, while only a completed generation is
+	copied to fixed OBJ VRAM at host VBlank. This prevents a partial next 75 Hz frame
+	from overwriting sprites still displayed by the 60 Hz host; clean generations do
+	not seed, publish or swap.
 	Limited sparse BG replay to WSC palette entries 0-127. Entries 128-255 feed the
 	OBJ palette and are not replayed into the upper half of the DS BG palette.
 	Added a conditional 32KB decoded-BG tile generation in unused main BG VRAM.

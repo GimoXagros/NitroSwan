@@ -33,10 +33,11 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	In progress on agent/wsc-video-core-fix:
 	* Generalized the sparse BG palette/backdrop event path to color hardware and
 	  removed game identity from renderer correctness.
-	* Generalized the line-142 sprite-table latch and replaced unconditional 16KB
-	  OBJ copies with conditional coherent-bank seeding. Dirty generations copy one
-	  complete bank; clean frames do not copy or swap. OBJ conversion is restricted
-	  to the 512 tiles addressable by sprite attributes.
+	* Generalized the line-142 sprite-table latch. Two decoded 16KB OBJ snapshots
+	  now live in main RAM: dirty generations conditionally seed the off-screen
+	  snapshot, and only the last completed generation is copied to fixed OBJ VRAM
+	  at host VBlank. A partial next 75 Hz frame therefore cannot overwrite the
+	  60 Hz displayed sprites. OBJ conversion remains restricted to 512 tiles.
 	* Limited sparse BG replay to WSC palette entries 0-127. Entries 128-255 feed
 	  OBJ palette conversion and must not overwrite DS BG palette slots.
 	* Added a conditional off-screen 32KB BG character bank. Decoded tiles are

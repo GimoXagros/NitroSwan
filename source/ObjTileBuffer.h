@@ -13,8 +13,10 @@ void videoTileBufferFrameComplete(void);
 void videoTileBufferVBlank(void);
 
 extern volatile u16 wsvObjTileOffset;
+extern volatile u16 wsvObjReadyTileOffset;
 extern volatile u16 wsvBgTileOffset;
 extern volatile u16 wsvBgReadyTileOffset;
+extern u8 wsvObjTileSnapshots[];
 extern volatile u16 objTilesConvertedFrame;
 extern volatile u16 objTilesConvertedMaximum;
 extern volatile u32 objBytesCopiedFrame;

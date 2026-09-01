@@ -15,8 +15,10 @@
 #define MONO_TILE_MARKERS 256
 
 volatile u16 wsvObjTileOffset;
+volatile u16 wsvObjReadyTileOffset;
 volatile u16 wsvBgTileOffset;
 volatile u16 wsvBgReadyTileOffset;
+u8 wsvObjTileSnapshots[OBJ_BANK_BYTES * 2] __attribute__((aligned(4)));
 volatile u16 objTilesConvertedFrame;
 volatile u16 objTilesConvertedMaximum;
 volatile u32 objBytesCopiedFrame;
@@ -30,6 +32,10 @@ volatile u32 bgBufferSwapCount;
 
 static bool modeInitialized;
 static u8 previousFormat;
+static volatile bool objSnapshotEnabled;
+static u32 objBuildGeneration;
+static volatile u32 objReadyGeneration;
+static u32 objPublishedGeneration;
 
 static unsigned int captureDirtyMarkers(const u8 *dirty,
 	unsigned int markerCount, unsigned int cleanMask) {
@@ -60,20 +66,21 @@ static void seedBgBank(unsigned int sourceOffset, unsigned int destinationOffset
 }
 
 static void seedObjBank(unsigned int sourceOffset, unsigned int destinationOffset) {
-	volatile u32 *source = (volatile u32 *)SPRITE_GFX + sourceOffset * 8;
-	volatile u32 *destination = (volatile u32 *)SPRITE_GFX + destinationOffset * 8;
+	const void *source = wsvObjTileSnapshots + sourceOffset * OBJ_TILE_BYTES;
+	void *destination = wsvObjTileSnapshots + destinationOffset * OBJ_TILE_BYTES;
 
-	// The destination bank was displayed two generations ago. A partial seed
-	// can miss tiles when games rewrite different animation tiles on successive
-	// frames, so make a coherent snapshot whenever a generation is committed.
-	// Clean frames do not copy or swap.
-	memcpy((void *)destination, (const void *)source, OBJ_BANK_BYTES);
+	// A 60 Hz host slice can finish one 75 Hz WS frame and begin the next before
+	// VBlank. Keep both build generations in main RAM so neither can overwrite
+	// the OBJ VRAM generation still being scanned out. Clean frames do not copy.
+	memcpy(destination, source, OBJ_BANK_BYTES);
 }
 
 void objTileBufferReset(void) {
 	wsvObjTileOffset = 0;
+	wsvObjReadyTileOffset = 0;
 	wsvBgTileOffset = 0;
 	wsvBgReadyTileOffset = 0;
+	memset(wsvObjTileSnapshots, 0, sizeof(wsvObjTileSnapshots));
 	objTilesConvertedFrame = 0;
 	objTilesConvertedMaximum = 0;
 	objBytesCopiedFrame = 0;
@@ -86,6 +93,10 @@ void objTileBufferReset(void) {
 	bgBufferSwapCount = 0;
 	modeInitialized = false;
 	previousFormat = 0;
+	objSnapshotEnabled = false;
+	objBuildGeneration = 1;
+	objReadyGeneration = 1;
+	objPublishedGeneration = 0;
 }
 
 void objTileBufferBeginFrame(unsigned int videoMode) {
@@ -133,9 +144,11 @@ void objTileBufferBeginFrame(unsigned int videoMode) {
 	}
 
 	if (!color4bpp) {
+		objSnapshotEnabled = false;
 		wsvObjTileOffset = 0;
 		return;
 	}
+	objSnapshotEnabled = true;
 
 	const unsigned int converted = captureDirtyMarkers(dirty, OBJ_TILE_COUNT, cleanMask);
 	objTilesConvertedFrame = converted;
@@ -155,6 +168,7 @@ void objTileBufferBeginFrame(unsigned int videoMode) {
 	}
 
 	wsvObjTileOffset = destinationOffset;
+	objBuildGeneration++;
 	objBufferSwapCount++;
 }
 
@@ -162,9 +176,25 @@ void videoTileBufferFrameComplete(void) {
 	// DSpico can begin the following 75 Hz WS frame before the next 60 Hz host
 	// VBlank. Only publish the character bank belonging to a completed frame.
 	wsvBgReadyTileOffset = wsvBgTileOffset;
+	if (objSnapshotEnabled) {
+		// Publish the pointer before the generation. An IRQ between these stores
+		// safely defers the copy rather than exposing an incomplete snapshot.
+		wsvObjReadyTileOffset = wsvObjTileOffset;
+		objReadyGeneration = objBuildGeneration;
+	}
 }
 
 void videoTileBufferVBlank(void) {
+	if (objSnapshotEnabled) {
+		const unsigned int readyGeneration = objReadyGeneration;
+		if (readyGeneration != objPublishedGeneration) {
+			const void *source = wsvObjTileSnapshots
+				+ wsvObjReadyTileOffset * OBJ_TILE_BYTES;
+			memcpy((void *)SPRITE_GFX, source, OBJ_BANK_BYTES);
+			objPublishedGeneration = readyGeneration;
+		}
+	}
+
 	const unsigned int tileBase = 2 + (wsvBgReadyTileOffset >> 14);
 	const u16 tileMask = BG_TILE_BASE(15);
 	REG_BG0CNT = (GFX_BG0CNT & ~tileMask) | BG_TILE_BASE(tileBase);

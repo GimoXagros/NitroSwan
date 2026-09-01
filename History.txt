@@ -15,6 +15,9 @@ Unreleased - WSC video core
 	Added a conditional 32KB decoded-BG tile generation in unused main BG VRAM.
 	BG0/BG1 character bases now switch only at VBlank, keeping tiles aligned with
 	the displayed scroll, window, tile-map and palette generation during transitions.
+	Deferred OAM conversion from line 144 to the following line 0, after dirty OBJ
+	tiles are decoded. Large-motion sprite tables and their OBJ tile bank now commit
+	from the same target frame instead of allowing a one-generation mismatch.
 	Restricted 4bpp OBJ writes to the 512 tiles addressable by sprite attributes,
 	preventing BG-only tiles 512-1023 from overwriting the other OBJ generation.
 	Added 2bpp/4bpp format-change invalidation and aggregate renderer metrics.

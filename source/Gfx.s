@@ -30,6 +30,7 @@
 	.global paletteInit
 	.global paletteTxAll
 	.global gfxRefresh
+	.global gfxNewFrame
 	.global gfxEndFrame
 	.global vblIrqHandler
 	.global v30ReadPort
@@ -666,6 +667,16 @@ gfxRefresh:					;@ Called from C when changing scaling.
 	.type gfxRefresh STT_FUNC
 ;@----------------------------------------------------------------------------
 	adr spxptr,sphinx0
+	bl gfxNewFrame				;@ Rebuild scaled sprite coordinates immediately.
+	b gfxEndFrame
+;@----------------------------------------------------------------------------
+gfxNewFrame:				;@ Called at line 0 after OBJ tile conversion.
+	.type gfxNewFrame STT_FUNC
+;@----------------------------------------------------------------------------
+	stmfd sp!,{lr}
+	ldr r0,tmpOamBuffer
+	bl wsvConvertSprites			;@ Pair the latched table with this tile generation.
+	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 ;@----------------------------------------------------------------------------
@@ -675,8 +686,6 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	bl wsvCopyScrollValues
 	ldr r0,tmpWinInOut			;@ Destination
 	bl copyWindowValues
-	ldr r0,tmpOamBuffer			;@ Destination
-	bl wsvConvertSprites
 	bl paletteTxAll
 	stmfd sp!,{spxptr,lr}			;@ C may clobber r12/spxptr.
 	bl paletteRasterFrameComplete

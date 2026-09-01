@@ -197,6 +197,15 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertNotIn("onePiece", video)
         self.assertNotIn("bl dmaSprites", frame)
         self.assertIn("bl dmaSprites", video[video.index("latchSpritesForFrame:"):video.index("endFrame:")])
+        new_frame = video[video.index("newFrame:"):video.index("latchSpritesForFrame:")]
+        self.assertLess(new_frame.index("bl objTileBufferBeginFrame"), new_frame.index("bl drawFrameGfx"))
+        self.assertLess(new_frame.index("bl drawFrameGfx"), new_frame.index("bl gfxNewFrame"))
+        gfx_new_frame = gfx[gfx.index("gfxNewFrame:"):gfx.index("gfxEndFrame:")]
+        self.assertEqual(gfx_new_frame.count("bl wsvConvertSprites"), 1)
+        self.assertNotIn("bl wsvConvertSprites", frame)
+        gfx_refresh = gfx[gfx.index("gfxRefresh:"):gfx.index("gfxNewFrame:")]
+        self.assertIn("bl gfxNewFrame", gfx_refresh)
+        self.assertIn("b gfxEndFrame", gfx_refresh)
         self.assertIn("drawFrameGfxAtVBlank", video)
         self.assertNotIn("PALETTE_RASTER_NO_FRAME_CALL", gfx)
         self.assertIn("REG_DMA3CNT_H", gfx)
@@ -253,6 +262,20 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertEqual(banks[displayed][900], 9000)
         self.assertFalse(prepare({}))
         self.assertEqual(prepared, displayed)
+
+    def test_late_sprite_latch_waits_for_the_next_line_zero_tile_generation(self):
+        old_tiles = {7: "idle"}
+        pending_tiles = {7: "large-motion"}
+        latched_table = {0: 7}
+
+        # Line 143 latches the table, but its newly uploaded tile remains dirty
+        # until conversion at the following line 0.
+        self.assertEqual(old_tiles[latched_table[0]], "idle")
+
+        next_tiles = dict(old_tiles)
+        next_tiles.update(pending_tiles)
+        committed_oam = dict(latched_table)
+        self.assertEqual(next_tiles[committed_oam[0]], "large-motion")
 
 
 if __name__ == "__main__":

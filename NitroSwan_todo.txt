@@ -42,6 +42,8 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	* Added a conditional off-screen 32KB BG character bank. Decoded tiles are
 	  prepared outside the displayed bank and BG0/BG1 switch generations at VBlank,
 	  avoiding live tile replacement during rapid selection/battle transitions.
+	* OAM conversion now waits until the following line 0 and runs after dirty OBJ
+	  conversion, pairing a late-latched sprite table with its matching tile bank.
 	* Host regressions, DS/DSi builds and melonDS boot/intro checks pass for Battle
 	  Spirit 1.0/1.5/Frontier, One Piece original/patched and two regression titles.
 	  Rapid combat movement, audio and frame pacing still require DSpico testing.

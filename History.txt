@@ -15,9 +15,11 @@ Unreleased - WSC video core
 	Added a conditional 32KB decoded-BG tile generation in unused main BG VRAM.
 	BG0/BG1 character bases now switch only at VBlank, keeping tiles aligned with
 	the displayed scroll, window, tile-map and palette generation during transitions.
-	Latched the publishable BG character bank only when a WS frame completes. Added
-	triple-buffered 8KB tile-map snapshots so a partial next 75 Hz frame cannot be
-	mixed with the completed OAM, scroll, window and palette at 60 Hz host VBlank.
+	Latched the publishable BG character bank only when a WS frame completes, so a
+	partial next 75 Hz frame cannot publish its decoded character generation at the
+	60 Hz host VBlank. Retained WSVideo's established single-destination tile-map
+	conversion; a rotating destination experiment was rejected because its shared
+	dirty-row cache produced incomplete maps and whole-screen corruption.
 	Restored the original hardware-verified line-144 OAM conversion timing.
 	Restricted 4bpp OBJ writes to the 512 tiles addressable by sprite attributes,
 	preventing BG-only tiles 512-1023 from overwriting the other OBJ generation.

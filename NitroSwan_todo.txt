@@ -42,10 +42,11 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	* Added a conditional off-screen 32KB BG character bank. Decoded tiles are
 	  prepared outside the displayed bank and BG0/BG1 switch generations at VBlank,
 	  avoiding live tile replacement during rapid selection/battle transitions.
-	* BG character-bank publication and triple-buffered 8KB tile-map snapshots now
-	  occur only for completed WS frames. A partially executed next 75 Hz frame can
-	  no longer replace the 60 Hz host frame's BG generation. Original line-144 OAM
-	  conversion timing is retained.
+	* BG character-bank publication now occurs only for completed WS frames, so a
+	  partially executed next 75 Hz frame cannot publish its decoded character
+	  generation at host VBlank. The experimental rotating tile-map destinations
+	  were removed after their shared dirty-row cache caused incomplete maps; the
+	  established single-destination map conversion and line-144 OAM timing remain.
 	* Host regressions, DS/DSi builds and melonDS boot/intro checks pass for Battle
 	  Spirit 1.0/1.5/Frontier, One Piece original/patched and two regression titles.
 	  Rapid combat movement, audio and frame pacing still require DSpico testing.

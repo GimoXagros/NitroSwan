@@ -15,8 +15,9 @@ core.
 > **Unreleased video-core work:** `agent/wsc-video-core-fix` removes the title
 > gate from renderer correctness. Color-hardware palette/backdrop writes now use
 > the bounded raster path for every title, while 4bpp OBJ tiles and the sprite
-> table are committed from matching frame generations. Only changed OBJ tiles
-> seed the next 16KB bank; no full-bank copy is performed on an unchanged frame.
+> table are committed from matching frame generations. A coherent 16KB OBJ bank
+> is seeded only when dirty tiles require a generation switch; unchanged frames
+> neither copy nor switch banks.
 > Battle Spirit 1.0/1.5/Frontier and both One Piece ROM variants pass melonDS
 > boot/intro checks at 60/60 FPS. DSpico combat validation is still pending.
 

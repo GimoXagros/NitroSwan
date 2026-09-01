@@ -16,7 +16,8 @@ class GraphicsCoreTests(unittest.TestCase):
         memory = (ROOT / "source" / "Memory.s").read_text(encoding="utf-8")
         self.assertIn("MAX_BG_PALETTE_DELTAS 384", raster)
         self.assertIn("PALETTE_FRAME_COUNT 3", raster)
-        self.assertIn("#define WS_BG_COLORS 256", raster)
+        self.assertIn("#define WS_BG_COLORS 128", raster)
+        self.assertIn("Entries 128-255", raster)
         self.assertIn("header != NULL && gSOC != SOC_ASWAN", raster)
         self.assertNotIn("GameIdentity", raster)
         self.assertNotIn("publisher", raster)
@@ -184,7 +185,8 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("EMUPALBUFF:\n\t.space 0x400", gfx)
         self.assertIn("sourceOffset ^ 0x200", obj)
         self.assertIn("(format & 0xC0) == 0xC0", obj)
-        self.assertIn("bits &= bits - 1", obj)
+        self.assertIn("OBJ_BANK_BYTES", obj)
+        self.assertIn("Clean frames do not copy or swap", obj)
         self.assertNotIn("memCopy", obj)
         self.assertIn("cmp r1,#0x4000", video)
         self.assertIn("strcc r3,[r8,r1]", video)
@@ -197,29 +199,25 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("dmaWinInOut", gfx)
         self.assertIn("REG_WIN0H", gfx)
 
-    def test_sparse_obj_generation_copy_preserves_unchanged_tiles(self):
+    def test_conditional_obj_generation_copy_preserves_unchanged_tiles(self):
         tile_count = 512
         bank = [[0] * tile_count, [0] * tile_count]
         current_bank = 0
-        previous_dirty = set(range(tile_count))
 
         def commit(changes):
-            nonlocal current_bank, previous_dirty
+            nonlocal current_bank
             if not changes:
                 return 0
             next_bank = current_bank ^ 1
-            for tile in previous_dirty:
-                bank[next_bank][tile] = bank[current_bank][tile]
+            bank[next_bank] = list(bank[current_bank])
             for tile, value in changes.items():
                 bank[next_bank][tile] = value
             current_bank = next_bank
-            copied = len(previous_dirty) * 32
-            previous_dirty = set(changes)
-            return copied
+            return tile_count * 32
 
         self.assertEqual(commit({2: 20, 400: 40}), 512 * 32)
         self.assertEqual(bank[current_bank][2], 20)
-        self.assertEqual(commit({7: 70}), 2 * 32)
+        self.assertEqual(commit({7: 70}), 512 * 32)
         self.assertEqual(bank[current_bank][2], 20)
         self.assertEqual(bank[current_bank][400], 40)
         self.assertEqual(bank[current_bank][7], 70)

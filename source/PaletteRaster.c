@@ -8,7 +8,10 @@
 
 #define WS_VISIBLE_LINES 144
 #define DS_GAME_TOP ((SCREEN_HEIGHT - WS_VISIBLE_LINES) / 2)
-#define WS_BG_COLORS 256
+// WSC palette entries 0-127 feed the DS background palette. Entries 128-255
+// are converted into OBJ_PALETTE by paletteTxAll and must not be replayed into
+// the upper half of BG_PALETTE.
+#define WS_BG_COLORS 128
 #define MAX_BG_PALETTE_DELTAS 384
 #define PALETTE_FRAME_COUNT 3
 

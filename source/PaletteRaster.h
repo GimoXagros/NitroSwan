@@ -24,9 +24,13 @@ void paletteRasterFrameComplete(void);
 void paletteRasterVBlank(void);
 void paletteRasterVCountIrq(void);
 
-extern bool onePieceVideoFixEnabled;
 extern bool wsvVideoWriteCallbackEnabled;
-extern volatile u16 onePieceObjTileOffset;
+extern volatile u16 paletteRasterEventsFrame;
+extern volatile u16 paletteRasterEventsMaximum;
+extern volatile u16 paletteRasterDroppedFrame;
+extern volatile u16 paletteRasterDroppedMaximum;
+extern volatile u16 paletteRasterVCountIrqsFrame;
+extern volatile u16 paletteRasterVCountIrqsMaximum;
 
 #ifdef __cplusplus
 }

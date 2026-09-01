@@ -30,11 +30,22 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	* Japanese original and Korean-patched DSpico validation passed for sky,
 	  character tiles, rapid movement, status/UI, sound, input and frame pacing.
 
+	In progress on agent/wsc-video-core-fix:
+	* Generalized the sparse BG palette/backdrop event path to color hardware and
+	  removed game identity from renderer correctness.
+	* Generalized the line-142 sprite-table latch and replaced unconditional 16KB
+	  OBJ copies with dirty-generation seeding. OBJ conversion is restricted to the
+	  512 tiles addressable by sprite attributes; 2bpp/4bpp mode changes invalidate
+	  the relevant decoded tiles.
+	* Host regressions, DS/DSi builds and melonDS boot/intro checks pass for Battle
+	  Spirit 1.0/1.5/Frontier, One Piece original/patched and two regression titles.
+	  Rapid combat movement, audio and frame pacing still require DSpico testing.
+
 	Next work plan after custom.r6 (priority order):
 	1. Run the standalone opcode-fetch timing ROM on WonderSwan hardware and retain
 	   the captured vectors as a regression reference. The game-level fix is complete.
-	2. Add per-line palette changes for Digimon, Final Lap and Rockman; keep the
-	   One Piece-specific path isolated unless shared hardware vectors justify it.
+	2. Complete DSpico combat validation of the generic palette/OBJ renderer, then
+	   split the minimal BG-only upstream patch from the OBJ coherency change.
 	3. Implement efficient sprite-window clipping for Final Fantasy, Makaimura,
 	   Neon Genesis Evangelion and Romancing Sa-Ga.
 	4. Add 4-color 1024-tile maps for Sorobang and WonderSwan Color BIOS.

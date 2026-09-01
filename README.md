@@ -12,6 +12,14 @@ core.
 > checksum gate with stable publisher/color/product/revision identity. The
 > Japanese original and Korean-patched ROM are both DSpico hardware-verified.
 
+> **Unreleased video-core work:** `agent/wsc-video-core-fix` removes the title
+> gate from renderer correctness. Color-hardware palette/backdrop writes now use
+> the bounded raster path for every title, while 4bpp OBJ tiles and the sprite
+> table are committed from matching frame generations. Only changed OBJ tiles
+> seed the next 16KB bank; no full-bank copy is performed on an unchanged frame.
+> Battle Spirit 1.0/1.5/Frontier and both One Piece ROM variants pass melonDS
+> boot/intro checks at 60/60 FPS. DSpico combat validation is still pending.
+
 ## 0.7.7-custom.r6 주요 기능
 
 - Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,

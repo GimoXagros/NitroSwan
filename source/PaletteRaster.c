@@ -3,12 +3,12 @@
 
 #include "PaletteRaster.h"
 #include "Cart.h"
-#include "GameIdentity.h"
 #include "Gfx.h"
+#include "ObjTileBuffer.h"
 
 #define WS_VISIBLE_LINES 144
 #define DS_GAME_TOP ((SCREEN_HEIGHT - WS_VISIBLE_LINES) / 2)
-#define WS_BG_COLORS 128
+#define WS_BG_COLORS 256
 #define MAX_BG_PALETTE_DELTAS 384
 #define PALETTE_FRAME_COUNT 3
 
@@ -32,9 +32,13 @@ static volatile int readyFrame = -1;
 static volatile int activeFrame = -1;
 static volatile u16 replayCursor;
 static bool rasterEnabled;
-bool onePieceVideoFixEnabled;
 bool wsvVideoWriteCallbackEnabled;
-volatile u16 onePieceObjTileOffset;
+volatile u16 paletteRasterEventsFrame;
+volatile u16 paletteRasterEventsMaximum;
+volatile u16 paletteRasterDroppedFrame;
+volatile u16 paletteRasterDroppedMaximum;
+volatile u16 paletteRasterVCountIrqsFrame;
+volatile u16 paletteRasterVCountIrqsMaximum;
 static u16 previousPalette[WS_BG_COLORS];
 static u16 previousBackdrop;
 
@@ -122,22 +126,24 @@ static int nextFreeFrame(int active, int ready) {
 }
 
 void paletteRasterConfigure(const WsHeader *header) {
-	const bool isOnePiece = header != NULL &&
-		isOnePieceGrandBattle(header->publisher, header->color,
-			header->gameId, header->gameRev);
-
-	rasterEnabled = isOnePiece;
-	onePieceVideoFixEnabled = isOnePiece;
-	wsvVideoWriteCallbackEnabled = isOnePiece;
+	const bool colorHardware = header != NULL && gSOC != SOC_ASWAN;
+	rasterEnabled = colorHardware;
+	wsvVideoWriteCallbackEnabled = colorHardware;
 	readyFrame = -1;
 	activeFrame = -1;
 	captureFrame = 0;
 	replayCursor = 0;
-	onePieceObjTileOffset = 0;
+	paletteRasterEventsFrame = 0;
+	paletteRasterEventsMaximum = 0;
+	paletteRasterDroppedFrame = 0;
+	paletteRasterDroppedMaximum = 0;
+	paletteRasterVCountIrqsFrame = 0;
+	paletteRasterVCountIrqsMaximum = 0;
+	objTileBufferReset();
 #if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
 	stopReplayIrq();
 #endif
-	if (isOnePiece) {
+	if (colorHardware) {
 		resetCaptureFrame(&frames[0]);
 		snapshotBase(&frames[0]);
 	}
@@ -177,6 +183,14 @@ void paletteRasterFrameComplete(void) {
 	}
 
 	PaletteDeltaFrame *finished = &frames[captureFrame];
+	paletteRasterEventsFrame = finished->count;
+	paletteRasterDroppedFrame = finished->dropped;
+	if (finished->count > paletteRasterEventsMaximum) {
+		paletteRasterEventsMaximum = finished->count;
+	}
+	if (finished->dropped > paletteRasterDroppedMaximum) {
+		paletteRasterDroppedMaximum = finished->dropped;
+	}
 	u16 cursor = 0;
 	for (unsigned int line = 0; line < WS_VISIBLE_LINES; line++) {
 		finished->lineStart[line] = cursor;
@@ -193,6 +207,10 @@ void paletteRasterFrameComplete(void) {
 }
 
 void paletteRasterVBlank(void) {
+	if (paletteRasterVCountIrqsFrame > paletteRasterVCountIrqsMaximum) {
+		paletteRasterVCountIrqsMaximum = paletteRasterVCountIrqsFrame;
+	}
+	paletteRasterVCountIrqsFrame = 0;
 	if (!rasterEnabled || readyFrame < 0) {
 		stopReplayIrq();
 		return;
@@ -232,6 +250,7 @@ void paletteRasterVCountIrq(void) {
 	}
 
 	PaletteDeltaFrame *active = &frames[frameIndex];
+	paletteRasterVCountIrqsFrame++;
 	if (replayCursor >= active->count) {
 		stopReplayIrq();
 		return;

@@ -1,6 +1,22 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+Unreleased - WSC video core
+	Removed the One Piece identity gate from renderer correctness. Background-color
+	and WSC palette RAM writes now feed the same bounded, sparse triple-buffered BG
+	raster path on color hardware; frames without events do not enable VCOUNT IRQs.
+	Latched every sprite table after visible line 142 and converted dirty tile data
+	at line 0 so OAM and OBJ data use the same emulated frame boundary.
+	Replaced the per-frame 16KB OBJ copy with dirty-generation seeding: only tiles
+	changed in the previous generation are copied before current dirty tiles are
+	decoded into the off-screen bank. Unchanged frames neither copy nor swap banks.
+	Restricted 4bpp OBJ writes to the 512 tiles addressable by sprite attributes,
+	preventing BG-only tiles 512-1023 from overwriting the other OBJ generation.
+	Added 2bpp/4bpp format-change invalidation and aggregate renderer metrics.
+	Host regressions and complete DS/DSi builds pass. Battle Spirit 1.0, 1.5,
+	Frontier, One Piece original/patched, Final Lap Special and Digimon Anode/Cathode
+	boot/intro graphics pass in melonDS at 60/60 FPS; DSpico combat testing is pending.
+
 V0.7.7-custom.r6 - 2026-08-31 (GimoXagros custom build)
 	Found that the r5 One Piece compatibility gate used the original ROM checksum,
 	which disabled both the battle-sky raster and OBJ timing paths for translated

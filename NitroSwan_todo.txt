@@ -42,7 +42,7 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	* Added a conditional off-screen 32KB BG character bank. Decoded tiles are
 	  prepared outside the displayed bank and BG0/BG1 switch generations at VBlank,
 	  avoiding live tile replacement during rapid selection/battle transitions.
-	* BG character-bank publication and triple-buffered 4KB tile-map snapshots now
+	* BG character-bank publication and triple-buffered 8KB tile-map snapshots now
 	  occur only for completed WS frames. A partially executed next 75 Hz frame can
 	  no longer replace the 60 Hz host frame's BG generation. Original line-144 OAM
 	  conversion timing is retained.

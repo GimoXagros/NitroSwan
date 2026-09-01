@@ -606,7 +606,7 @@ exit75Hz:
 	beq nothingNew
 	ldr r0,dmaMapBuffer			;@ Last completed WS map snapshot only.
 	mov r1,#BG_GFX
-	mov r2,#0x1000
+	mov r2,#0x2000				;@ Two 32x64 maps, 4 KiB each.
 	bl memcpy
 	mov r0,#0
 	strb r0,frameDone
@@ -680,7 +680,7 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 
 	ldr r1,dmaMapBuffer			;@ Seed spare maps from the last complete frame.
 	ldr r0,tmpMapBuffer
-	mov r2,#0x1000
+	mov r2,#0x2000				;@ Two 32x64 maps, 4 KiB each.
 	bl memcpy
 	ldr r0,tmpMapBuffer
 	bl wsvConvertTileMaps			;@ Snapshot maps before a later partial frame can change RAM.
@@ -861,11 +861,11 @@ WININOUTBUFF2:
 WININOUTBUFF3:
 	.space SCREEN_HEIGHT*12		;@ Scrollbuffer.
 MAP_BUFFER1:
-	.space 0x1000					;@ Completed BG0/BG1 map snapshots.
+	.space 0x2000					;@ Completed BG0/BG1 map snapshots.
 MAP_BUFFER2:
-	.space 0x1000
+	.space 0x2000
 MAP_BUFFER3:
-	.space 0x1000
+	.space 0x2000
 DISP_CTRL_LUT:
 	.space 64*4					;@ Convert from WS DispCtrl to NDS/GBA WinCtrl
 MAPPED_RGB:

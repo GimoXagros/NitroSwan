@@ -21,7 +21,7 @@ core.
 > off-screen character bank and switch BG0/BG1 character bases only at VBlank,
 > preventing transition tiles from changing underneath the displayed frame.
 > The 60 Hz DSpico path can begin the next 75 Hz WS frame before host VBlank,
-> so BG character-bank selection and a triple-buffered 4KB tile-map snapshot are
+> so BG character-bank selection and a triple-buffered 8KB tile-map snapshot are
 > now published only when an emulated frame completes. OAM keeps the original
 > hardware-verified line-144 commit timing.
 > Battle Spirit 1.0/1.5/Frontier and both One Piece ROM variants pass melonDS

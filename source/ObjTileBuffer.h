@@ -9,10 +9,12 @@ extern "C" {
 
 void objTileBufferReset(void);
 void objTileBufferBeginFrame(unsigned int videoMode);
+void videoTileBufferFrameComplete(void);
 void videoTileBufferVBlank(void);
 
 extern volatile u16 wsvObjTileOffset;
 extern volatile u16 wsvBgTileOffset;
+extern volatile u16 wsvBgReadyTileOffset;
 extern volatile u16 objTilesConvertedFrame;
 extern volatile u16 objTilesConvertedMaximum;
 extern volatile u32 objBytesCopiedFrame;

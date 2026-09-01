@@ -30,7 +30,6 @@
 	.global paletteInit
 	.global paletteTxAll
 	.global gfxRefresh
-	.global gfxNewFrame
 	.global gfxEndFrame
 	.global vblIrqHandler
 	.global v30ReadPort
@@ -605,10 +604,10 @@ exit75Hz:
 	ldrb r0,frameDone
 	cmp r0,#0
 	beq nothingNew
-	adr spxptr,sphinx0
-//	bl wsvConvertTiles
-	mov r0,#BG_GFX
-	bl wsvConvertTileMaps
+	ldr r0,dmaMapBuffer			;@ Last completed WS map snapshot only.
+	mov r1,#BG_GFX
+	mov r2,#0x1000
+	bl memcpy
 	mov r0,#0
 	strb r0,frameDone
 nothingNew:
@@ -667,16 +666,6 @@ gfxRefresh:					;@ Called from C when changing scaling.
 	.type gfxRefresh STT_FUNC
 ;@----------------------------------------------------------------------------
 	adr spxptr,sphinx0
-	bl gfxNewFrame				;@ Rebuild scaled sprite coordinates immediately.
-	b gfxEndFrame
-;@----------------------------------------------------------------------------
-gfxNewFrame:				;@ Called at line 0 after OBJ tile conversion.
-	.type gfxNewFrame STT_FUNC
-;@----------------------------------------------------------------------------
-	stmfd sp!,{lr}
-	ldr r0,tmpOamBuffer
-	bl wsvConvertSprites			;@ Pair the latched table with this tile generation.
-	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 ;@----------------------------------------------------------------------------
@@ -686,8 +675,18 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	bl wsvCopyScrollValues
 	ldr r0,tmpWinInOut			;@ Destination
 	bl copyWindowValues
+	ldr r0,tmpOamBuffer			;@ Destination
+	bl wsvConvertSprites
+
+	ldr r1,dmaMapBuffer			;@ Seed spare maps from the last complete frame.
+	ldr r0,tmpMapBuffer
+	mov r2,#0x1000
+	bl memcpy
+	ldr r0,tmpMapBuffer
+	bl wsvConvertTileMaps			;@ Snapshot maps before a later partial frame can change RAM.
 	bl paletteTxAll
 	stmfd sp!,{spxptr,lr}			;@ C may clobber r12/spxptr.
+	bl videoTileBufferFrameComplete
 	bl paletteRasterFrameComplete
 	ldmfd sp!,{spxptr,lr}
 ;@--------------------------
@@ -696,6 +695,12 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	ldmia r0,{r1-r8,lr}
 	stmia r0!,{r7,r8,lr}
 	stmia r0,{r1-r6}
+
+	adr r0,tmpMapBuffer
+	ldmia r0,{r1-r3}
+	str r3,[r0]					;@ tmp = old extra
+	str r1,[r0,#4]				;@ dma = frame just completed
+	str r2,[r0,#8]				;@ extra = old dma
 
 	mov r0,#1
 	strb r0,frameDone
@@ -725,6 +730,9 @@ dmaWinInOut:	.long WININOUTBUFF2
 xtrOamBuffer:	.long OAM_BUFFER3
 xtrScroll:		.long SCROLLBUFF3
 xtrWinInOut:	.long WININOUTBUFF3
+tmpMapBuffer:	.long MAP_BUFFER1
+dmaMapBuffer:	.long MAP_BUFFER2
+xtrMapBuffer:	.long MAP_BUFFER3
 
 
 gFlicker:		.byte 1
@@ -852,6 +860,12 @@ WININOUTBUFF2:
 	.space SCREEN_HEIGHT*12		;@ Scrollbuffer.
 WININOUTBUFF3:
 	.space SCREEN_HEIGHT*12		;@ Scrollbuffer.
+MAP_BUFFER1:
+	.space 0x1000					;@ Completed BG0/BG1 map snapshots.
+MAP_BUFFER2:
+	.space 0x1000
+MAP_BUFFER3:
+	.space 0x1000
 DISP_CTRL_LUT:
 	.space 64*4					;@ Convert from WS DispCtrl to NDS/GBA WinCtrl
 MAPPED_RGB:

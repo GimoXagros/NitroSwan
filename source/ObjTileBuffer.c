@@ -16,6 +16,7 @@
 
 volatile u16 wsvObjTileOffset;
 volatile u16 wsvBgTileOffset;
+volatile u16 wsvBgReadyTileOffset;
 volatile u16 objTilesConvertedFrame;
 volatile u16 objTilesConvertedMaximum;
 volatile u32 objBytesCopiedFrame;
@@ -72,6 +73,7 @@ static void seedObjBank(unsigned int sourceOffset, unsigned int destinationOffse
 void objTileBufferReset(void) {
 	wsvObjTileOffset = 0;
 	wsvBgTileOffset = 0;
+	wsvBgReadyTileOffset = 0;
 	objTilesConvertedFrame = 0;
 	objTilesConvertedMaximum = 0;
 	objBytesCopiedFrame = 0;
@@ -156,8 +158,14 @@ void objTileBufferBeginFrame(unsigned int videoMode) {
 	objBufferSwapCount++;
 }
 
+void videoTileBufferFrameComplete(void) {
+	// DSpico can begin the following 75 Hz WS frame before the next 60 Hz host
+	// VBlank. Only publish the character bank belonging to a completed frame.
+	wsvBgReadyTileOffset = wsvBgTileOffset;
+}
+
 void videoTileBufferVBlank(void) {
-	const unsigned int tileBase = 2 + (wsvBgTileOffset >> 14);
+	const unsigned int tileBase = 2 + (wsvBgReadyTileOffset >> 14);
 	const u16 tileMask = BG_TILE_BASE(15);
 	REG_BG0CNT = (GFX_BG0CNT & ~tileMask) | BG_TILE_BASE(tileBase);
 	REG_BG1CNT = (GFX_BG1CNT & ~tileMask) | BG_TILE_BASE(tileBase);

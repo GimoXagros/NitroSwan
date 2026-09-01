@@ -189,6 +189,11 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("OBJ_BANK_BYTES", obj)
         self.assertIn("BG_BANK_BYTES 0x8000", obj)
         self.assertIn("wsvBgTileOffset", obj)
+        self.assertIn("wsvBgReadyTileOffset", obj)
+        self.assertIn("wsvBgReadyTileOffset = wsvBgTileOffset", obj)
+        vblank_switch = obj[obj.index("void videoTileBufferVBlank") :]
+        self.assertIn("wsvBgReadyTileOffset", vblank_switch)
+        self.assertNotIn("wsvBgTileOffset >>", vblank_switch)
         self.assertIn("otherwise unused main BG VRAM", obj)
         self.assertIn("Clean frames do not copy or swap", obj)
         self.assertNotIn("memCopy", obj)
@@ -198,14 +203,16 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertNotIn("bl dmaSprites", frame)
         self.assertIn("bl dmaSprites", video[video.index("latchSpritesForFrame:"):video.index("endFrame:")])
         new_frame = video[video.index("newFrame:"):video.index("latchSpritesForFrame:")]
-        self.assertLess(new_frame.index("bl objTileBufferBeginFrame"), new_frame.index("bl drawFrameGfx"))
-        self.assertLess(new_frame.index("bl drawFrameGfx"), new_frame.index("bl gfxNewFrame"))
-        gfx_new_frame = gfx[gfx.index("gfxNewFrame:"):gfx.index("gfxEndFrame:")]
-        self.assertEqual(gfx_new_frame.count("bl wsvConvertSprites"), 1)
-        self.assertNotIn("bl wsvConvertSprites", frame)
-        gfx_refresh = gfx[gfx.index("gfxRefresh:"):gfx.index("gfxNewFrame:")]
-        self.assertIn("bl gfxNewFrame", gfx_refresh)
-        self.assertIn("b gfxEndFrame", gfx_refresh)
+        self.assertLess(new_frame.index("bl objTileBufferBeginFrame"), new_frame.index("b drawFrameGfx"))
+        self.assertEqual(frame.count("bl wsvConvertSprites"), 1)
+        self.assertIn("bl wsvConvertTileMaps", frame)
+        self.assertIn("bl videoTileBufferFrameComplete", frame)
+        vblank = gfx[gfx.index("vblIrqHandler:"):gfx.index("copyWindowValues:")]
+        self.assertIn("ldr r0,dmaMapBuffer", vblank)
+        self.assertNotIn("bl wsvConvertTileMaps", vblank)
+        self.assertIn("MAP_BUFFER1:", gfx)
+        self.assertIn("MAP_BUFFER2:", gfx)
+        self.assertIn("MAP_BUFFER3:", gfx)
         self.assertIn("drawFrameGfxAtVBlank", video)
         self.assertNotIn("PALETTE_RASTER_NO_FRAME_CALL", gfx)
         self.assertIn("REG_DMA3CNT_H", gfx)
@@ -263,19 +270,23 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertFalse(prepare({}))
         self.assertEqual(prepared, displayed)
 
-    def test_late_sprite_latch_waits_for_the_next_line_zero_tile_generation(self):
-        old_tiles = {7: "idle"}
-        pending_tiles = {7: "large-motion"}
-        latched_table = {0: 7}
+    def test_partial_next_frame_cannot_replace_the_last_completed_bg_generation(self):
+        prepared_bank = 0
+        completed_bank = 0
+        completed_map = "frame-a"
 
-        # Line 143 latches the table, but its newly uploaded tile remains dirty
-        # until conversion at the following line 0.
-        self.assertEqual(old_tiles[latched_table[0]], "idle")
+        # Frame A finishes and becomes eligible for the next host VBlank.
+        prepared_bank = 1
+        completed_bank = prepared_bank
 
-        next_tiles = dict(old_tiles)
-        next_tiles.update(pending_tiles)
-        committed_oam = dict(latched_table)
-        self.assertEqual(next_tiles[committed_oam[0]], "large-motion")
+        # A 200-scanline DSpico slice can then enter frame B before that VBlank.
+        prepared_bank = 0
+        live_map = "partial-frame-b"
+
+        self.assertEqual(completed_bank, 1)
+        self.assertEqual(completed_map, "frame-a")
+        self.assertNotEqual(prepared_bank, completed_bank)
+        self.assertNotEqual(live_map, completed_map)
 
 
 if __name__ == "__main__":

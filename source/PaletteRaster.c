@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "PaletteRaster.h"
-#include "GameIdentity.h"
+#include "Cart.h"
 #include "Gfx.h"
 
 #define WS_VISIBLE_LINES 144
@@ -117,12 +117,10 @@ static int nextFreeFrame(int active, int ready) {
 }
 
 void paletteRasterConfigure(const WsHeader *header) {
-	const bool isOnePiece = header != NULL &&
-		isOnePieceGrandBattle(header->publisher, header->color,
-			header->gameId, header->gameRev);
-
-	rasterEnabled = isOnePiece;
-	wsvVideoWriteCallbackEnabled = isOnePiece;
+	// Select emulated hardware, not a title or a particular ROM dump.
+	const bool colorHardware = header != NULL && gSOC != SOC_ASWAN;
+	rasterEnabled = colorHardware;
+	wsvVideoWriteCallbackEnabled = colorHardware;
 	readyFrame = -1;
 	activeFrame = -1;
 	captureFrame = 0;
@@ -130,7 +128,7 @@ void paletteRasterConfigure(const WsHeader *header) {
 #if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
 	stopReplayIrq();
 #endif
-	if (isOnePiece) {
+	if (colorHardware) {
 		resetCaptureFrame(&frames[0]);
 		snapshotBase(&frames[0]);
 	}

@@ -20,7 +20,9 @@ def check(path, dsi):
     data = path.read_bytes()
     assert len(data) >= 0x200, f"{path}: truncated header"
     unit = data[0x12]
-    assert (unit in (2, 3)) if dsi else (unit == 0), (path, unit)
+    # BlocksDS also gives the DS-memory build a DSi-enhanced (unit 2) header.
+    # Unit code alone does not identify the linker memory profile.
+    assert (unit in (2, 3)) if dsi else (unit in (0, 2)), (path, unit)
     assert crc16(data[:0x15E]) == struct.unpack_from("<H", data, 0x15E)[0], "header CRC"
     for name, offset in (("ARM9", 0x20), ("ARM7", 0x30)):
         rom, entry, ram, size = struct.unpack_from("<IIII", data, offset)

@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r6
+# NitroSwan V0.7.7-custom.r7
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -8,29 +8,34 @@ Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
 filenames, per-game RAM cheats, and accuracy fixes based on the upstream 0.7.7
 core.
 
-> **One Piece modified-ROM compatibility:** custom.r6 replaces the original-ROM
-> checksum gate with stable publisher/color/product/revision identity. The
-> Japanese original and Korean-patched ROM are both DSpico hardware-verified.
+> **Known limitation / 알려진 문제:** One Piece와 Digimon Battle Spirit 계열의
+> 캐릭터 깨짐은 초기 상태보다 크게 개선됐지만, DSpico 실기에서 일부 모션의
+> 잔여 깨짐이 확인되었습니다. r7은 완전 해결판이 아닙니다. 사용자가 이 제한을
+> 확인하고 배포를 승인했으며, 완전 해결은 다음 최우선 작업입니다.
+> Backgrounds were reported correct against Oswan; the Rockman & Forte background
+> issue was also reported resolved. Some character-motion corruption remains.
 
-> **Unreleased video-core work:** `agent/wsc-video-core-fix` removes the title
-> gate from renderer correctness. Color-hardware palette/backdrop writes now use
-> the bounded raster path for every title, while 4bpp OBJ tiles and the sprite
-> table are committed from matching frame generations. Two coherent 16KB decoded
-> OBJ snapshots are prepared in main RAM, and only the last completed generation
-> is copied to fixed OBJ VRAM at host VBlank. This prevents a partial next 75 Hz
-> frame from overwriting the 60 Hz displayed sprites; clean generations do not
-> seed or publish a snapshot. Decoded BG tiles now use a separate 32KB
-> off-screen character bank and switch BG0/BG1 character bases only at VBlank,
-> preventing transition tiles from changing underneath the displayed frame.
-> The 60 Hz DSpico path can begin the next 75 Hz WS frame before host VBlank,
-> so BG character-bank selection is now published only when an emulated frame
-> completes. Tile maps retain WSVideo's established single-destination cached
-> conversion path; rotating converted map destinations caused incomplete maps
-> and was removed. OAM keeps the original hardware-verified line-144 timing.
-> Battle Spirit 1.0/1.5/Frontier and both One Piece ROM variants pass melonDS
-> boot/intro checks at 60/60 FPS. DSpico combat validation is still pending.
+## 0.7.7-custom.r7 영상 개선
 
-## 0.7.7-custom.r6 주요 기능
+- 게임명·checksum·publisher whitelist 대신 컬러 하드웨어의 실제 palette/backdrop
+  쓰기를 기준으로 bounded BG raster를 적용합니다. 일본어 원본과 번역 ROM도
+  같은 영상 하드웨어 경로를 사용합니다.
+- 4bpp OBJ의 16KB 스냅샷 두 개를 메인 RAM에서 준비하고, 완료된 세대만 호스트
+  VBlank에 OBJ VRAM으로 복사합니다. 변경이 없으면 세대 전환·복사를 생략하며,
+  OBJ 타일 변환은 스프라이트가 참조하는 512개로 제한합니다.
+- BG 문자 타일에는 조건부 32KB 보조 뱅크를 사용하고 완료 프레임의 뱅크 선택을
+  VBlank에 반영합니다. 타일맵 변환은 기존 단일 목적지 캐시 경로를 유지합니다.
+  화면 전체를 망가뜨렸던 타일맵 3중 버퍼 실험은 배포 코드에서 제거했습니다.
+- line-142 이후 sprite-table latch와 line-144 OAM 변환을 유지합니다.
+  OBJ 팔레트 raster는 추가하지 않았고, EMUPALBUFF는 1KB이며 DMA3 창 처리를
+  보존합니다. 전체 프레임버퍼·매 주사선 palette 전체 검사는 사용하지 않습니다.
+- 내부 `WSC-VideoCore-r8-test`의 렌더러를 배포합니다. 테스트 번호 r8과 정식
+  버전 `v0.7.7-custom.r7`은 별개입니다.
+
+검증 범위와 남은 제한은 [r7 검증 기록](Docs/ReleaseValidation-r7.md),
+다음 우선순위·난이도는 [TODO](NitroSwan_todo.txt)를 참고하십시오.
+
+## 유지되는 주요 기능
 
 - Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
   불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
@@ -53,25 +58,19 @@ core.
   실시간 경로는 실기에서 검증된 `0.7.7-custom` 동작으로 복원했습니다.
 - 알려진 게임 전용 CPU idle-loop 속도핵을 다시 활성화했습니다. 기본값은
   꺼짐이며 `Options > Machine > Cpu Speed Hacks`에서 켤 수 있습니다.
-- `From TV Animation One Piece - Grand Battle Swan Colosseum`의 캐릭터 타일
-  깨짐은 게임 전용 4bpp OBJ 이중 버퍼와 sprite latch로 수정했습니다. r6는
-  WonderSwan background-color register와 palette RAM의 실제 write를 bounded
-  event로 기록하고 DS의 `BG_PALETTE[0]` backdrop으로 재생해 전투 하늘
-  그라데이션도 복원합니다.
-  두 경로 모두 bounded triple buffer를 사용하며 OBJ 팔레트 raster와 DMA3는
-  사용하지 않으므로 기존 HBlank 창 처리를 유지합니다. 전투 하늘과 캐릭터
-  그래픽은 일본어 원본 ROM의 melonDS 및 DSpico 실기에서 정상 동작을
-  확인했습니다. r6에서는 checksum 의존성을 제거했으며 일본어 원본과 한글패치
-  ROM 모두 DSpico 실기에서 하늘·캐릭터·사운드·입력·속도가 정상입니다.
+- `From TV Animation One Piece - Grand Battle Swan Colosseum`의 전투 하늘은
+  background-color/palette RAM write-time event로 복원합니다. r7에서는 이를
+  특정 게임 전용 경로가 아닌 공통 컬러 하드웨어 경로로 확장했습니다.
+  캐릭터 그래픽에는 위에 명시한 잔여 모션 깨짐이 있습니다.
 - `Mahjong Touryuumon`이 사용하는 `$A0` cartridge ROM opcode/immediate-fetch
   waitstate를 반영했습니다. 속도·사운드·입력은 DSpico 실기에서 정상 동작을
   확인했습니다.
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r6.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r7.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r6.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r7.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -196,13 +195,13 @@ BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r6
+make NAME=NitroSwan-DS-0.7.7-custom.r7
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r6 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 

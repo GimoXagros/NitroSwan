@@ -32,14 +32,7 @@ def run(command: list[str]) -> None:
 
 
 def main() -> int:
-    run([sys.executable, "tests/test_rtc_calendar.py"])
-    run([sys.executable, "tests/test_aswan_ram.py"])
-    run([sys.executable, "tests/test_n3ds_cache.py"])
-    run([sys.executable, "tests/test_settings_folder.py"])
-    run([sys.executable, "tests/test_timing_core.py"])
-    run([sys.executable, "tests/test_graphics_core.py"])
-    run([sys.executable, "tests/test_sound_core.py"])
-    run([sys.executable, "tests/test_speed_core.py"])
+    run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"])
 
     compiler = find_c_compiler()
     if compiler:
@@ -74,20 +67,6 @@ def main() -> int:
         ])
         run([str(cache_exe)])
 
-        identity_exe = Path(temp_dir) / ("game_identity_test.exe" if os.name == "nt" else "game_identity_test")
-        run([
-            compiler,
-            "-std=c11",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-Isource",
-            "tests/test_game_identity.c",
-            "source/GameIdentity.c",
-            "-o",
-            str(identity_exe),
-        ])
-        run([str(identity_exe)])
     else:
         print("Host C compiler unavailable; C vectors will run in CI, Python vectors passed locally.")
     return 0

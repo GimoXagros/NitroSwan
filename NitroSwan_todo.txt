@@ -1,4 +1,13 @@
-NitroSwan Todo (post v0.7.7-custom.r6 review)
+NitroSwan Todo (post v0.7.7-custom.r7 review, 2026-09-02)
+
+	Release status:
+	* r7 publishes the internal WSC-VideoCore-r8-test renderer.
+	* User DSpico testing: character-motion corruption is greatly reduced but
+	  still present. Release approved with this known limitation; NOT fully fixed.
+	* User comparison against Oswan: backgrounds are correct. Rockman & Forte's
+	  background issue is reported resolved; keep it in the regression set.
+	* The earlier "fixed" notes below describe historical test results, not an
+	  exhaustive guarantee for the current generic renderer.
 
 	Completed through custom.r6:
 	* Fixed 16KB RAM behaviour on mono consoles.
@@ -30,7 +39,7 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	* Japanese original and Korean-patched DSpico validation passed for sky,
 	  character tiles, rapid movement, status/UI, sound, input and frame pacing.
 
-	In progress on agent/wsc-video-core-fix:
+	Implemented in custom.r7 (partial improvement, not full OBJ correctness):
 	* Generalized the sparse BG palette/backdrop event path to color hardware and
 	  removed game identity from renderer correctness.
 	* Generalized the line-142 sprite-table latch. Two decoded 16KB OBJ snapshots
@@ -48,24 +57,40 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	  generation at host VBlank. The experimental rotating tile-map destinations
 	  were removed after their shared dirty-row cache caused incomplete maps; the
 	  established single-destination map conversion and line-144 OAM timing remain.
-	* Host regressions, DS/DSi builds and melonDS boot/intro checks pass for Battle
-	  Spirit 1.0/1.5/Frontier, One Piece original/patched and two regression titles.
-	  Rapid combat movement, audio and frame pacing still require DSpico testing.
+	* r8-test passed 48 host Python source/model tests and DS/DSi builds.
+	  User hardware testing confirms residual character corruption; complete
+	  resolution is deferred. See Docs/ReleaseValidation-r7.md for test limits.
 
-	Next work plan after custom.r6 (priority order):
-	1. Run the standalone opcode-fetch timing ROM on WonderSwan hardware and retain
-	   the captured vectors as a regression reference. The game-level fix is complete.
-	2. Complete DSpico combat validation of the generic palette/OBJ renderer, then
-	   split the minimal BG-only upstream patch from the OBJ coherency change.
-	3. Implement efficient sprite-window clipping for Final Fantasy, Makaimura,
-	   Neon Genesis Evangelion and Romancing Sa-Ga.
-	4. Add 4-color 1024-tile maps for Sorobang and WonderSwan Color BIOS.
-	5. Revisit sound timing, LFSR, frequency writes and HyperVoice stereo as
-	   isolated changes with DSpico performance tests after each change.
-	6. Make REP strings interruptible without checking every iteration or
-	   regressing the proven 3DS hot path.
-	7. Handle WSC Contrast High/Low, evaluate mono 4-color mode, and map the
-	   serial port to debug output with hardware verification.
+	Next work plan after custom.r7 (recommended order; difficulty is an estimate):
+	1. [P0 / Very high] Finish residual One Piece / Digimon character-motion
+	   corruption. Trace OAM/tile/latch/palette/host-VBlank generations together;
+	   test atomic publication, partial next frames and animation latency. Do not
+	   assume the remaining cause is proven. Preserve working BG and r7 baseline.
+	2. [P1 / Medium] Add repeatable scene regressions and full transfer metrics.
+	   Include OBJ VBlank-copy cost (not currently counted by objBytesCopiedFrame),
+	   dropped palette events, audio and frame pacing. Recheck original/patched
+	   One Piece, three Battle Spirit games, Rockman & Forte, and WS/2bpp controls.
+	3. [P1 / High] Validate generic BG raster in Anode/Cathode battles, Final Lap
+	   2000/Special roads and Hataraku Chocobo map transitions; address only
+	   reproduced defects. Keep upstream BG-only PR #59 separate from OBJ work.
+	4. [P2 / Medium-high] Add 4-color 1024-tile maps for Sorobang and WSC BIOS.
+	   Verify bank selection and dirty-cache coverage without regressing 4bpp.
+	5. [P2 / Very high] Implement efficient sprite-window edge clipping for
+	   Final Fantasy, Makaimura, Evangelion and Romancing Sa-Ga. Investigate Dicing
+	   Knight sprite priority separately; DS layer limits may require trade-offs.
+	6. [P2 / Very high, hardware dependent] Run opcode-fetch hardware vectors and
+	   research actual V30MZ prefetch/refill behavior for PR #60. Preserve the
+	   Mahjong game-level improvement; do not add arbitrary per-byte penalties.
+	7. [P3 / High-very high] Revisit sound frequency writes, sweep/noise timing,
+	   LFSR and HyperVoice stereo as separate changes with DSpico audio tests.
+	8. [P3 / Very high] Make REP strings interruptible while preserving CPU flags,
+	   cycles, cache coherence and the proven 3DS performance path.
+	9. [P3 / Mixed] Serial debug mapping (low-medium), WSC contrast (medium-high),
+	   mono 4-color mode (high), and remaining GUI/refactor items. Work separately.
+
+	Recommendation: do 1 and its diagnostic part of 2 together; then 3 and 4.
+	Do not mix CPU timing, audio, sprite windows or broad rewrites into the
+	remaining character-corruption investigation.
 
 	Remaining accuracy work:
 	Handle Contrast High/Low for WSC, change Y every other frame.
@@ -75,7 +100,7 @@ NitroSwan Todo (post v0.7.7-custom.r6 review)
 	Run mono games in 4 color mode?
 	Add hardware vectors for opcode-fetch ROM waitstates.
 	Improve partial 8x8 sprite-window edge clipping if a cheaper renderer is found.
-	Sprite priority can't be fixed.
+	Sprite priority is constrained by the DS layer model; evaluate before promising a fix.
 
 GFX:
 	See Sphinx todo.
@@ -127,6 +152,9 @@ Games Not Working Fixed:
 		* Waiting on sample playing.
 
 Games With Glitches:
+	One Piece original/patched and Digimon Battle Spirit 1.0/1.5/Frontier:
+		* Generic r7 renderer substantially improves character graphics, but some
+		  rapid-motion corruption remains on DSpico. Highest-priority follow-up.
 	Dicing Knight. shadows are in front of player.
 		* Sprite priority is wrong for sprites that are above FG.
 	Digimon - Anode Tamer & Cathode Tamer, missing background gradient in battles.
@@ -141,8 +169,6 @@ Games With Glitches:
 		* Sprite Window and...?
 	Neon Genesis Evangelion, sprites overlap avatar images.
 		* Sprite windows and sprite priority.
-	Rockman & Forte - Mirai Kara no Chousensha, no background fade in intro.
-		* Changes palette per line?
 	Romancing Sa-Ga, sprites overlap text boxes.
 		* Sprite windows and sprite priority.
 	Sorobang, incorrect tiles.
@@ -151,13 +177,12 @@ Games With Glitches:
 		* Needs all 1024 tiles in 4color mode.
 
 Games With Glitches Fixed:
+	Rockman & Forte - Mirai Kara no Chousensha, background issue.
+		* User reports resolved during r7-test BG verification. Retained in r7;
+		  this is not an exhaustive whole-game certification.
 	Mahjong Touryuumon, speed too fast.
 		* Fixed in custom.r5 by honoring $A0 bit 3 for instruction-stream
 		  ROM fetches; speed, sound and input are hardware-confirmed.
-	From TV Animation One Piece - Grand Battle Swan Colosseum, character tiles
-	breaking during rapid movement, including the Korean-patched ROM.
-		* Fixed on hardware with checksum-independent product identity, synchronized
-		  4bpp OBJ buffering and sprite latch.
 	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect battle sky.
 		* Fixed on original and Korean-patched ROMs with write-time background-color
 		  and palette RAM events replayed through DS BG_PALETTE[0].

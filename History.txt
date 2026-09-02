@@ -1,12 +1,16 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-Unreleased - WSC video core
+V0.7.7-custom.r7 - 2026-09-02 (GimoXagros custom build)
+	Released the renderer from internal WSC-VideoCore-r8-test with the user's
+	explicit approval despite residual character-motion corruption on DSpico.
+	This is a substantial improvement release, not a complete OBJ accuracy fix.
 	Removed the One Piece identity gate from renderer correctness. Background-color
 	and WSC palette RAM writes now feed the same bounded, sparse triple-buffered BG
 	raster path on color hardware; frames without events do not enable VCOUNT IRQs.
 	Latched every sprite table after visible line 142 and converted dirty tile data
-	at line 0 so OAM and OBJ data use the same emulated frame boundary.
+	at line 0; retained line-144 OAM conversion. Full sprite/tile visibility timing
+	accuracy remains under investigation.
 	Moved the two decoded 16KB OBJ generations to main RAM. Dirty tiles conditionally
 	seed and update the off-screen snapshot, while only a completed generation is
 	copied to fixed OBJ VRAM at host VBlank. This prevents a partial next 75 Hz frame
@@ -15,8 +19,7 @@ Unreleased - WSC video core
 	Limited sparse BG replay to WSC palette entries 0-127. Entries 128-255 feed the
 	OBJ palette and are not replayed into the upper half of the DS BG palette.
 	Added a conditional 32KB decoded-BG tile generation in unused main BG VRAM.
-	BG0/BG1 character bases now switch only at VBlank, keeping tiles aligned with
-	the displayed scroll, window, tile-map and palette generation during transitions.
+	BG0/BG1 character bases now switch only at VBlank, reducing transition tearing.
 	Latched the publishable BG character bank only when a WS frame completes, so a
 	partial next 75 Hz frame cannot publish its decoded character generation at the
 	60 Hz host VBlank. Retained WSVideo's established single-destination tile-map
@@ -26,9 +29,12 @@ Unreleased - WSC video core
 	Restricted 4bpp OBJ writes to the 512 tiles addressable by sprite attributes,
 	preventing BG-only tiles 512-1023 from overwriting the other OBJ generation.
 	Added 2bpp/4bpp format-change invalidation and aggregate renderer metrics.
-	Host regressions and complete DS/DSi builds pass. Battle Spirit 1.0, 1.5,
-	Frontier, One Piece original/patched, Final Lap Special and Digimon Anode/Cathode
-	boot/intro graphics pass in melonDS at 60/60 FPS; DSpico combat testing is pending.
+	The user reports backgrounds correct against Oswan and the Rockman & Forte
+	background issue resolved. Final r8-test DSpico testing still shows some character
+	motion corruption, much reduced from the initial version. Complete resolution
+	is the first follow-up task. See Docs/ReleaseValidation-r7.md for test scope.
+	Updated About/CI artifact versions and removed obsolete game-identity tests
+	from the host regression runner. Kept CPU timing and sound changes out of scope.
 
 V0.7.7-custom.r6 - 2026-08-31 (GimoXagros custom build)
 	Found that the r5 One Piece compatibility gate used the original ROM checksum,

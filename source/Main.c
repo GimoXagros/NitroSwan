@@ -19,6 +19,7 @@
 #include "WSCart/WSCart.h"
 #include "Cheats.h"
 #include "PaletteRaster.h"
+#include "ObjTileBuffer.h"
 
 static void checkTimeOut(void);
 static void setupGraphics(void);
@@ -55,6 +56,7 @@ void myVblank(void) {
 //---------------------------------------------------------------------------------
 	vBlankOverflow = true;
 //	DC_FlushRange(EMUPALBUFF, 0x400);
+	videoTileBufferVBlank();
 	vblIrqHandler();
 #if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
 	paletteRasterVBlank();

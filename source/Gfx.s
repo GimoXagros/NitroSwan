@@ -605,7 +605,6 @@ exit75Hz:
 	cmp r0,#0
 	beq nothingNew
 	adr spxptr,sphinx0
-//	bl wsvConvertTiles
 	mov r0,#BG_GFX
 	bl wsvConvertTileMaps
 	mov r0,#0
@@ -677,8 +676,10 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	bl copyWindowValues
 	ldr r0,tmpOamBuffer			;@ Destination
 	bl wsvConvertSprites
+
 	bl paletteTxAll
 	stmfd sp!,{spxptr,lr}			;@ C may clobber r12/spxptr.
+	bl videoTileBufferFrameComplete
 	bl paletteRasterFrameComplete
 	ldmfd sp!,{spxptr,lr}
 ;@--------------------------

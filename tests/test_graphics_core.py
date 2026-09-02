@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for the stable custom graphics and One Piece path."""
+"""Regression checks for the generic WonderSwan video core path."""
 
 from pathlib import Path
 import unittest
@@ -9,15 +9,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class GraphicsCoreTests(unittest.TestCase):
-    def test_one_piece_raster_path_is_bounded_and_title_specific(self):
+    def test_color_raster_path_is_bounded_and_hardware_selected(self):
         video = (ROOT / "source" / "Sphinx" / "WSVideo.s").read_text(encoding="utf-8")
         raster = (ROOT / "source" / "PaletteRaster.c").read_text(encoding="utf-8")
         header = (ROOT / "source" / "PaletteRaster.h").read_text(encoding="utf-8")
         memory = (ROOT / "source" / "Memory.s").read_text(encoding="utf-8")
         self.assertIn("MAX_BG_PALETTE_DELTAS 384", raster)
         self.assertIn("PALETTE_FRAME_COUNT 3", raster)
-        self.assertIn("isOnePieceGrandBattle(header->publisher, header->color", raster)
-        self.assertNotIn("header->checksum", raster)
+        self.assertIn("#define WS_BG_COLORS 128", raster)
+        self.assertIn("Entries 128-255", raster)
+        self.assertIn("header != NULL && gSOC != SOC_ASWAN", raster)
+        self.assertNotIn("GameIdentity", raster)
+        self.assertNotIn("publisher", raster)
+        self.assertNotIn("gameId", raster)
+        self.assertNotIn("checksum", raster)
         self.assertIn("PALETTE_RASTER_CAPTURE_ONLY 1", header)
         self.assertIn("PALETTE_RASTER_REPLAY_ONLY 2", header)
         self.assertIn("PALETTE_RASTER_BG_ONLY 3", header)
@@ -25,29 +30,13 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertNotIn("DMA3", raster)
         self.assertIn("cmp r0,#0x0FE00000", memory)
         self.assertIn("bl paletteRasterCapturePaletteWrite", memory)
-        self.assertIn("onePieceVideoFixEnabled", video)
+        self.assertIn("objTileBufferBeginFrame", video)
+        self.assertIn("latchSpritesForFrame", video)
         self.assertIn("#ifdef WS_VIDEO_WRITE_CALLBACK", video)
         self.assertIn("bl wsvVideoRegisterWriteCallback", video)
         self.assertNotIn("bl paletteRasterCaptureLine", video)
 
-        is_one_piece = lambda publisher, color, game_id, revision: (
-            publisher == 0x01
-            and color == 0x01
-            and game_id == 0x29
-            and (revision & 0x7F) == 0x00
-        )
-        self.assertTrue(is_one_piece(0x01, 0x01, 0x29, 0x00))
-        self.assertTrue(is_one_piece(0x01, 0x01, 0x29, 0x80))
-        self.assertFalse(is_one_piece(0x01, 0x01, 0x28, 0x00))
-        self.assertFalse(is_one_piece(0x02, 0x01, 0x29, 0x00))
-        self.assertFalse(is_one_piece(0x01, 0x00, 0x29, 0x00))
-        self.assertFalse(is_one_piece(0x01, 0x01, 0x29, 0x01))
-
-        identity = (ROOT / "source" / "GameIdentity.c").read_text(encoding="utf-8")
-        self.assertNotIn("checksum", identity)
-        self.assertIn("(gameRev & 0x7F) == 0x00", identity)
-
-    def test_one_piece_backdrop_uses_palette_zero_without_indexing_palette_ram_zero(self):
+    def test_backdrop_uses_palette_zero_without_indexing_palette_ram_zero(self):
         raster = (ROOT / "source" / "PaletteRaster.c").read_text(encoding="utf-8")
         self.assertIn("previousBackdrop = backdropRawColor(palette);", raster)
         self.assertIn("appendDelta(line + 1, 0, backdrop);", raster)
@@ -185,22 +174,154 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("SetYtrigger(DS_GAME_TOP + active->delta[0].line);", raster)
         self.assertIn("BG_PALETTE[index] = active->base[index];", raster)
         vblank = main[main.index("void myVblank(void)") : main.index("int main(")]
+        self.assertLess(vblank.index("videoTileBufferVBlank();"), vblank.index("vblIrqHandler();"))
         self.assertLess(vblank.index("vblIrqHandler();"), vblank.index("paletteRasterVBlank();"))
 
     def test_palette_and_obj_buffers_keep_the_release_contracts(self):
         gfx = (ROOT / "source" / "Gfx.s").read_text(encoding="utf-8")
         video = (ROOT / "source" / "Sphinx" / "WSVideo.s").read_text(encoding="utf-8")
+        obj = (ROOT / "source" / "ObjTileBuffer.c").read_text(encoding="utf-8")
         frame = gfx[gfx.index("gfxEndFrame:"):gfx.index("frameTotal:")]
         self.assertEqual(frame.count("bl paletteTxAll"), 1)
         self.assertIn("EMUPALBUFF:\n\t.space 0x400", gfx)
-        self.assertIn("eor r0,r1,#0x200", video)
-        self.assertIn("mov r2,#0x4000", video)
-        self.assertIn("bleq dmaSprites", video)
+        self.assertIn("sourceOffset ^ 0x200", obj)
+        self.assertIn("(format & 0xC0) == 0xC0", obj)
+        self.assertIn("OBJ_BANK_BYTES", obj)
+        self.assertIn("wsvObjTileSnapshots[OBJ_BANK_BYTES * 2]", obj)
+        self.assertIn("wsvObjReadyTileOffset = wsvObjTileOffset", obj)
+        self.assertIn("memcpy((void *)SPRITE_GFX, source, OBJ_BANK_BYTES)", obj)
+        self.assertIn("BG_BANK_BYTES 0x8000", obj)
+        self.assertIn("wsvBgTileOffset", obj)
+        self.assertIn("wsvBgReadyTileOffset", obj)
+        self.assertIn("wsvBgReadyTileOffset = wsvBgTileOffset", obj)
+        vblank_switch = obj[obj.index("void videoTileBufferVBlank") :]
+        self.assertIn("wsvBgReadyTileOffset", vblank_switch)
+        self.assertNotIn("wsvBgTileOffset >>", vblank_switch)
+        self.assertIn("otherwise unused main BG VRAM", obj)
+        self.assertIn("Clean frames do not copy", obj)
+        self.assertNotIn("memCopy", obj)
+        self.assertIn("cmp r1,#0x4000", video)
+        self.assertIn("strcc r3,[r8,r1]", video)
+        self.assertIn(".long wsvObjTileSnapshots", video)
+        sprite_convert = video[video.index("wsvConvertSprites:"):video.index("#ifdef GBA", video.index("wsvConvertSprites:"))]
+        self.assertNotIn("wsvObjTileOffset", sprite_convert)
+        self.assertNotIn("onePiece", video)
+        self.assertNotIn("bl dmaSprites", frame)
+        self.assertIn("bl dmaSprites", video[video.index("latchSpritesForFrame:"):video.index("endFrame:")])
+        new_frame = video[video.index("newFrame:"):video.index("latchSpritesForFrame:")]
+        self.assertLess(new_frame.index("bl objTileBufferBeginFrame"), new_frame.index("b drawFrameGfx"))
+        self.assertEqual(frame.count("bl wsvConvertSprites"), 1)
+        self.assertNotIn("bl wsvConvertTileMaps", frame)
+        self.assertIn("bl videoTileBufferFrameComplete", frame)
+        vblank = gfx[gfx.index("vblIrqHandler:"):gfx.index("copyWindowValues:")]
+        self.assertIn("mov r0,#BG_GFX", vblank)
+        self.assertIn("bl wsvConvertTileMaps", vblank)
+        self.assertNotIn("MapBuffer", gfx)
+        self.assertNotIn("MAP_BUFFER", gfx)
         self.assertIn("drawFrameGfxAtVBlank", video)
         self.assertNotIn("PALETTE_RASTER_NO_FRAME_CALL", gfx)
         self.assertIn("REG_DMA3CNT_H", gfx)
         self.assertIn("dmaWinInOut", gfx)
         self.assertIn("REG_WIN0H", gfx)
+
+    def test_conditional_obj_generation_copy_preserves_unchanged_tiles(self):
+        tile_count = 512
+        bank = [[0] * tile_count, [0] * tile_count]
+        current_bank = 0
+
+        def commit(changes):
+            nonlocal current_bank
+            if not changes:
+                return 0
+            next_bank = current_bank ^ 1
+            bank[next_bank] = list(bank[current_bank])
+            for tile, value in changes.items():
+                bank[next_bank][tile] = value
+            current_bank = next_bank
+            return tile_count * 32
+
+        self.assertEqual(commit({2: 20, 400: 40}), 512 * 32)
+        self.assertEqual(bank[current_bank][2], 20)
+        self.assertEqual(commit({7: 70}), 512 * 32)
+        self.assertEqual(bank[current_bank][2], 20)
+        self.assertEqual(bank[current_bank][400], 40)
+        self.assertEqual(bank[current_bank][7], 70)
+        old_bank = current_bank
+        self.assertEqual(commit({}), 0)
+        self.assertEqual(current_bank, old_bank)
+
+    def test_partial_next_frame_cannot_overwrite_published_obj_snapshot(self):
+        snapshots = [[0] * 512, [0] * 512]
+        build = 0
+        ready = 0
+        vram = [0] * 512
+
+        def begin_frame(changes):
+            nonlocal build
+            if not changes:
+                return
+            destination = build ^ 1
+            snapshots[destination] = list(snapshots[build])
+            for tile, value in changes.items():
+                snapshots[destination][tile] = value
+            build = destination
+
+        # Frame A completes and is the only generation eligible for VBlank.
+        begin_frame({7: 100})
+        ready = build
+
+        # Frame B begins before host VBlank, but writes only its other RAM bank.
+        begin_frame({7: 200, 8: 201})
+        self.assertNotEqual(build, ready)
+        self.assertEqual(snapshots[ready][7], 100)
+
+        # Host VBlank publishes exactly frame A into fixed OBJ VRAM.
+        vram[:] = snapshots[ready]
+        self.assertEqual(vram[7], 100)
+        self.assertEqual(vram[8], 0)
+
+    def test_bg_generation_switches_only_after_a_coherent_bank_is_built(self):
+        tile_count = 1024
+        banks = [[0] * tile_count, [0] * tile_count]
+        displayed = 0
+        prepared = 0
+
+        def prepare(changes):
+            nonlocal prepared
+            if not changes:
+                return False
+            destination = prepared ^ 1
+            banks[destination] = list(banks[prepared])
+            for tile, value in changes.items():
+                banks[destination][tile] = value
+            prepared = destination
+            return True
+
+        self.assertTrue(prepare({12: 120, 900: 9000}))
+        self.assertEqual(displayed, 0)
+        displayed = prepared  # VBlank character-base switch.
+        self.assertEqual(banks[displayed][12], 120)
+        self.assertEqual(banks[displayed][900], 9000)
+        self.assertFalse(prepare({}))
+        self.assertEqual(prepared, displayed)
+
+    def test_partial_next_frame_cannot_replace_the_last_completed_bg_generation(self):
+        prepared_bank = 0
+        completed_bank = 0
+        completed_map = "frame-a"
+
+        # Frame A finishes and becomes eligible for the next host VBlank.
+        prepared_bank = 1
+        completed_bank = prepared_bank
+
+        # A 200-scanline DSpico slice can then enter frame B before that VBlank.
+        prepared_bank = 0
+        live_map = "partial-frame-b"
+
+        self.assertEqual(completed_bank, 1)
+        self.assertEqual(completed_map, "frame-a")
+        self.assertNotEqual(prepared_bank, completed_bank)
+        self.assertNotEqual(live_map, completed_map)
 
 
 if __name__ == "__main__":

@@ -30,20 +30,27 @@ jobs:
         run: python3 tools/run_core_regressions.py
 
       - name: Build DS version
-        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r3
+        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r7
 
       - name: Build DSi/DSpico version
         run: |
-          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r3 DSPICO_3DS_BUILD=1 \
+          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
+
+      - name: Validate executable headers and embedded banners
+        run: |
+          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r7.nds \
+            --dsi NitroSwan-DSi-0.7.7-custom.r7.nds
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: NitroSwan-0.7.7-custom.r3
+          name: NitroSwan-0.7.7-custom.r7
           path: |
             History.txt
-            NitroSwan-DS-0.7.7-custom.r3.nds
-            NitroSwan-DSi-0.7.7-custom.r3.nds
+            NitroSwan-DS-0.7.7-custom.r7.nds
+            NitroSwan-DSi-0.7.7-custom.r7.nds
             README.md
             WonderWitch.md
+            NitroSwan_todo.txt
+            Docs/ReleaseValidation-r7.md

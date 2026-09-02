@@ -15,6 +15,8 @@ Do not grow checksum whitelists for modified variants. If two official revisions
 really require different behavior, distinguish them with the official revision
 field and document the hardware evidence.
 
-The One Piece compatibility path follows this policy through the shared
-`isOnePieceGrandBattle()` helper. The BG palette/backdrop and custom OBJ code stay
-separate, but both are enabled from the same helper result.
+Renderer correctness must not use game identity. The generic video core selects
+the BG palette/backdrop path from the active WonderSwan hardware state and commits
+OBJ tiles with the sprite table at the emulated frame boundary. Product identity
+may still be used by a diagnostic build to select trace targets, but not to decide
+which hardware behavior is emulated.

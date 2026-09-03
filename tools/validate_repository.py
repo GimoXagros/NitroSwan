@@ -150,6 +150,10 @@ def main() -> int:
     try:
         records = tracked_files(ROOT)
         errors = validate(ROOT, records)
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or b"").decode("utf-8", errors="replace").strip()
+        print(f"FAIL repository scan: {error}\n{detail}", file=sys.stderr)
+        return 1
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"FAIL repository scan: {error}", file=sys.stderr)
         return 1

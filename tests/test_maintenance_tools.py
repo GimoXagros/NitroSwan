@@ -65,6 +65,14 @@ class CompilerTests(unittest.TestCase):
 
 
 class RepositoryTests(unittest.TestCase):
+    def test_ci_trusts_only_its_checkout(self):
+        workflow = (hygiene.ROOT / ".github/workflows/build.yaml").read_text(
+            encoding="utf-8")
+        trust_lines = [line.strip() for line in workflow.splitlines()
+                       if "git config" in line and "safe.directory" in line]
+        self.assertEqual(trust_lines, [
+            'git config --global --add safe.directory "$GITHUB_WORKSPACE"'])
+
     def test_personal_paths_and_narrow_example_allowlist(self):
         # Construct forbidden samples so the test itself contains no private path.
         for path in ("C:" + "/Users/" + "alice/sdk", "/home/" + "alice/sdk",

@@ -207,11 +207,23 @@ Fresh 0617815 clone, exact recursive gitlinks, local Windows/MSYS2 toolchain:
 | DS | 567296 | `3d7e2ddbc2123127eb789170cead2bc5c58fbc8dcf58cd3d41b82a3bd30a3c02` |
 | DSi/DSpico | 568320 | `08cb4dbb5fe8e9db3030a400d09743a471878612e356fbd63d47dcf595998bbc` |
 
-Published checksums differ. Byte inspection found 42 DS / 46 DSi differing
-bytes: 40 in header authentication areas and 2/6 within generated compressed
-graphics arrays. Those arrays' tail padding needs semantic inspection; hashes
-alone do not establish corrupt release binaries. Final candidate build results
-and CI evidence are recorded below after completion.
+Published checksums differ. Byte inspection and LZ10 decoding found 42 DS / 46
+DSi differing bytes: 40 at header authentication offsets 0x300-0x313 and
+0xFEC-0xFFF, plus 2/6 unused tail-padding bytes in generated graphics arrays.
+Decoded graphics are identical, and no other byte differs. Specifically:
+
+| Profile / compressed symbol | Consumed / allocated compressed bytes | Identical decoded bytes |
+| --- | ---: | ---: |
+| DS SCBottomTiles | 1246 / 1248 | 4128 |
+| DSi SCBottomMap | 323 / 324 | 384 |
+| DSi SCBottomTiles | 1246 / 1248 | 4128 |
+| DSi EmuFontTiles | 2113 / 2116 | 4096 |
+
+Thus this baseline/release comparison found non-semantic generated padding,
+not changed instructions or corrupt decoded assets. Bit-for-bit repeatability
+still needs tool-side padding normalization in a separately scoped task; no
+binary is patched or re-uploaded by this audit. Do not generalize this result to
+arbitrary differing hashes or to the changed maintenance candidate.
 
 Warnings in BOTH baseline profiles (all pre-existing; no warning suppression):
 
@@ -229,9 +241,30 @@ untracked local assets; unknown binary content still requires human review.
 
 ## Final candidate / PR evidence
 
-Pending final committed clean build and CI; update this section with exact
-reviewed commit/results before handoff. Main, release/tag, History dates and
-all active PR/gitlink pointers must remain unchanged.
+Clean remote clone plus exact candidate checkout:
+`a95c96fc575ca1d26851192bc834e918079e355b`. Recursive gitlinks unchanged.
+Compileall, repository hygiene (181 recursive tracked entries), localization,
+65 Python tests, DS/DSi build and NDS validation all PASS. Local host C explicitly
+SKIP (no working host compiler). No new compiler warning; the same four warnings
+listed above occur in each profile. Both banner icon/palette, CRCs, six language
+title slots and executable ranges pass the existing validator.
+
+| Candidate artifact (not a release) | Bytes | SHA-256 |
+| --- | ---: | --- |
+| NitroSwan-DS-0.7.7-custom.r7.nds | 567296 | `1ea06f2645d62f8e6a6eaa0039ca0f059c843ebefe66bcb752c94a184337ddc4` |
+| NitroSwan-DSi-0.7.7-custom.r7.nds | 567296 | `b54a9aeb377ae6910261b8232e3bc1dc508202b929242d3c803ffea2aaba2a81` |
+
+These differ intentionally from r7 because the dead line-index code/storage was
+removed and the palette ownership defect fixed. No application version, feature
+flag, OBJ copy count, emulated scanline event, DMA assignment or VBlank call order
+changed. Host instruction count/code layout necessarily changes; no performance
+or hardware certification is inferred from this maintenance build.
+
+Initial commits: tooling `99f4b52`, documentation `ef0890c`, minimal palette fix /
+dead-state cleanup / audit counterexamples `a95c96f`. A following documentation
+commit records these results; source/build inputs are unchanged by that record.
+Draft PR and CI status are recorded once the remote run completes. Main,
+release/tag, History dates and all active PR/gitlink pointers remain unchanged.
 
 ## Next work recommendation
 

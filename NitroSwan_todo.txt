@@ -1,215 +1,106 @@
-NitroSwan Todo (post v0.7.7-custom.r7 review, 2026-09-02)
+NitroSwan Todo — current release v0.7.7-custom.r7
+Maintenance snapshot: 2026-09-03. See Docs/BaselineAudit-r7.md for audit blockers.
+This is not a new release; History.txt remains the historical release record.
 
-	Release status:
-	* r7 publishes the internal WSC-VideoCore-r8-test renderer.
-	* User DSpico testing: character-motion corruption is greatly reduced but
-	  still present. Release approved with this known limitation; NOT fully fixed.
-	* User comparison against Oswan: backgrounds are correct. Rockman & Forte's
-	  background issue is reported resolved; keep it in the regression set.
-	* The earlier "fixed" notes below describe historical test results, not an
-	  exhaustive guarantee for the current generic renderer.
+1. Current release status
+   * r7 publishes the generic WSC-VideoCore-r8-test renderer (the internal test
+     number is not a public r8 release).
+   * DSpico-tested by the user: substantially improved character motion, but
+     still open in current r7. No full OBJ-correctness claim.
+   * User Oswan comparison: BGs correct; Rockman & Forte BG issue reported
+     resolved during r7 testing. Preserve those scenes as regression controls.
+   * CI/source-model checks/builds are not DSpico or native WonderSwan tests.
+   * Maintenance audit: palette handoff interleaving fixed independently;
+     renderer ABI and reset/ownership safety gaps still need closure before
+     this can be called a fully safe next-feature baseline.
 
-	Completed through custom.r6:
-	* Fixed 16KB RAM behaviour on mono consoles.
-	* Fixed RTC invalid values, calendar month lengths, leap years and rollover.
-	* Replaced the global DSpico MPU mapping with a NitroSwan-only 64KB ROM bank
-	  cache, preserving NDS_Shared and BlocksDS memory aliases.
-	* Restored opt-in game-specific idle-loop speed hacks with cache coherency.
-	* Fixed ROM-load Data aborts for ASCII, Korean and Japanese filenames.
-	* Restored the V0.7.7-custom video/audio/CPU hot paths after r2 regressions.
-	* Auto-created /nitroswan and default settings.cfg; hidden folders remain usable.
-	* Fixed Pico Loader first-ROM reads and direct-launch NVRAM save paths.
-	* Enabled and exposed automatic NVRAM saving, including save-on-exit.
-	* Fixed One Piece Grand Battle Swan Colosseum OBJ tile tearing on hardware for
-	  the Japanese original ROM with a title-bounded 4bpp OBJ double buffer and
-	  sprite latch. custom.r6 selects the path using stable product identity so
-	  modified ROMs are not excluded solely by their checksum.
-	* Added the missing background-color-register replay to DS BG_PALETTE[0]. The
-	  original ROM battle sky and character graphics are correct in melonDS and on
-	  DSpico hardware. r6 also verifies the Korean-patched ROM.
-	  This does not complete the general per-line palette task for other games.
-	* Added cached cartridge opcode/immediate-fetch waitstates for $A0 bit 3.
-	  Mahjong Touryuumon speed, sound and input are confirmed normal on DSpico.
+2. Highest-priority open defect
+   P0 / Very high: remaining character-motion corruption in One Piece original
+   and patched variants, Digimon Battle Spirit 1.0 / 1.5 / Frontier.
+   "Fixed in r6 title-specific path" is historical validation; "improved in r7
+   generic renderer" and "still open in current r7" describe the present.
+   No new attempt to solve this defect is part of the baseline maintenance.
 
-	Completed in custom.r6:
-	* Removed the One Piece exact-checksum identity dependency. Publisher, color,
-	  product ID and the low 7 revision bits now select both compatibility paths.
-	* Replaced per-line palette scanning with bounded write-time events for the
-	  background-color register and WSC palette RAM only.
-	* Japanese original and Korean-patched DSpico validation passed for sky,
-	  character tiles, rapid movement, status/UI, sound, input and frame pacing.
+3. Next work order (difficulty estimates, not delivery promises)
+   0. Safety prerequisite / High: close the audit's C/ARM stack alignment,
+      state-load/reset and coherent publication gaps with executable tests.
+      Keep all active upstream PR branches and r7 reference assets intact.
+   1. P0 / Very high: capture OAM, decoded OBJ, sprite latch, palette and host
+      VBlank generations together in the reproducible character-motion scenes.
+      First prove or reject the suspected ownership cause; do not change the
+      working BG path, sprite timing or copy count on a source-model guess.
+   2. P1 / Medium: repeatable paired scene tests and separate WS-frame seed /
+      host-VBlank publication copy metrics. objBytesCopiedFrame is SEED ONLY,
+      not total bandwidth; count actual publications and define boundaries.
+      Record palette drops, frame pacing, sound, input and saves.
+   3. P1 / High: BG raster validation in Anode/Cathode battles, Final Lap
+      2000/Special roads and Hataraku Chocobo transitions. Reproduce before
+      fixing. Keep NitroSwan #59 / Sphinx #4 minimal and BG-only.
+   4. P2 / Medium-high: 4-color 1024-tile maps (Sorobang, WSC BIOS).
+   5. P2 / Very high: sprite-window edge clipping (Final Fantasy, Makaimura,
+      Evangelion, Romancing Sa-Ga); Dicing Knight priority is a separate issue.
+   6. P2 / Very high, hardware-dependent: native opcode-fetch timing vectors
+      and proper V30MZ prefetch/refill for #60 / Sphinx #5 / ARMV30MZ #6.
+      The shipped per-byte candidate is not an accepted prefetch model.
+   7. P3 / High-very high: sound frequency/sweep/noise/LFSR/HyperVoice stereo.
+   8. P3 / Very high: interruptible REP preserving flags, cycles and cache.
+   9. P3 / Mixed: serial debug (low-medium), WSC high/low contrast and
+      alternating Y (medium-high), mono 4-color mode (high), GUI cart jumper,
+      and separately justified refactors. Do not mix these into OBJ work.
+   Recommendation: safety prerequisite, then 1 with diagnostic parts of 2,
+   then 3 and 4. No future feature branch is created by this audit.
 
-	Implemented in custom.r7 (partial improvement, not full OBJ correctness):
-	* Generalized the sparse BG palette/backdrop event path to color hardware and
-	  removed game identity from renderer correctness.
-	* Generalized the line-142 sprite-table latch. Two decoded 16KB OBJ snapshots
-	  now live in main RAM: dirty generations conditionally seed the off-screen
-	  snapshot, and only the last completed generation is copied to fixed OBJ VRAM
-	  at host VBlank. A partial next 75 Hz frame therefore cannot overwrite the
-	  60 Hz displayed sprites. OBJ conversion remains restricted to 512 tiles.
-	* Limited sparse BG replay to WSC palette entries 0-127. Entries 128-255 feed
-	  OBJ palette conversion and must not overwrite DS BG palette slots.
-	* Added a conditional off-screen 32KB BG character bank. Decoded tiles are
-	  prepared outside the displayed bank and BG0/BG1 switch generations at VBlank,
-	  avoiding live tile replacement during rapid selection/battle transitions.
-	* BG character-bank publication now occurs only for completed WS frames, so a
-	  partially executed next 75 Hz frame cannot publish its decoded character
-	  generation at host VBlank. The experimental rotating tile-map destinations
-	  were removed after their shared dirty-row cache caused incomplete maps; the
-	  established single-destination map conversion and line-144 OAM timing remain.
-	* r8-test passed 48 host Python source/model tests and DS/DSi builds.
-	  User hardware testing confirms residual character corruption; complete
-	  resolution is deferred. See Docs/ReleaseValidation-r7.md for test limits.
+4. Current validation gaps
+   * tests/test_graphics_core.py is source-contract/Python model evidence.
+     It does not simulate arbitrary IRQ scheduling or prove pixel correctness.
+   * Some audit tests deliberately demonstrate OLD/OPEN counterexamples:
+     their success means the counterexample is reproduced, not safety passed.
+   * Fresh emulator and DSpico scene/performance checks for maintenance changes
+     are pending; historical r6/r7 runs must not be relabelled as fresh passes.
+   * Native WonderSwan prefetch/scanline vectors pending; DSpico is not native WS.
+   * Mode transitions: mono/color, 2bpp/4bpp, packed/planar, LCD, BIOS,
+     reset/eject/replacement and save-state restore need interrupt-aware checks.
+   * Palette event overflow, generation wrap and WS/host frame metric boundaries
+     need explicit stress coverage; no new timing/renderer flag in this task.
+   * Clean builds verify assembly/link/package, not game compatibility.
 
-	Next work plan after custom.r7 (recommended order; difficulty is an estimate):
-	1. [P0 / Very high] Finish residual One Piece / Digimon character-motion
-	   corruption. Trace OAM/tile/latch/palette/host-VBlank generations together;
-	   test atomic publication, partial next frames and animation latency. Do not
-	   assume the remaining cause is proven. Preserve working BG and r7 baseline.
-	2. [P1 / Medium] Add repeatable scene regressions and full transfer metrics.
-	   Include OBJ VBlank-copy cost (not currently counted by objBytesCopiedFrame),
-	   dropped palette events, audio and frame pacing. Recheck original/patched
-	   One Piece, three Battle Spirit games, Rockman & Forte, and WS/2bpp controls.
-	3. [P1 / High] Validate generic BG raster in Anode/Cathode battles, Final Lap
-	   2000/Special roads and Hataraku Chocobo map transitions; address only
-	   reproduced defects. Keep upstream BG-only PR #59 separate from OBJ work.
-	4. [P2 / Medium-high] Add 4-color 1024-tile maps for Sorobang and WSC BIOS.
-	   Verify bank selection and dirty-cache coverage without regressing 4bpp.
-	5. [P2 / Very high] Implement efficient sprite-window edge clipping for
-	   Final Fantasy, Makaimura, Evangelion and Romancing Sa-Ga. Investigate Dicing
-	   Knight sprite priority separately; DS layer limits may require trade-offs.
-	6. [P2 / Very high, hardware dependent] Run opcode-fetch hardware vectors and
-	   research actual V30MZ prefetch/refill behavior for PR #60. Preserve the
-	   Mahjong game-level improvement; do not add arbitrary per-byte penalties.
-	7. [P3 / High-very high] Revisit sound frequency writes, sweep/noise timing,
-	   LFSR and HyperVoice stereo as separate changes with DSpico audio tests.
-	8. [P3 / Very high] Make REP strings interruptible while preserving CPU flags,
-	   cycles, cache coherence and the proven 3DS performance path.
-	9. [P3 / Mixed] Serial debug mapping (low-medium), WSC contrast (medium-high),
-	   mono 4-color mode (high), and remaining GUI/refactor items. Work separately.
+5. Known game issues and retained regression controls
+   OPEN:
+   * One Piece original/patched and Battle Spirit 1.0/1.5/Frontier: P0 above.
+   * Dicing Knight: shadows in front of player (OBJ/FG priority).
+   * Anode/Cathode: historical missing battle gradients, generic r7 recheck pending.
+   * Final Lap 2000/Special: historical road palette issue, generic recheck pending.
+   * Hataraku Chocobo: map-transition BG raster validation pending.
+   * Final Fantasy: dialog sprite windows.
+   * Makaimura: intro right edge / first-boss sprites (window, further cause open).
+   * Evangelion and Romancing Sa-Ga: overlapping sprites/window priority.
+   * Sorobang and WSC BIOS: need 1024 tiles in 4-color mode.
+   * Cardcaptor Sakura and Mr. Driller: timing-sensitive.
+   * Dekadence - Vesilintu, Mingle Magnet, Nazo Ou Pocket, Puyo Puyo Tsuu,
+     Side Pocket, Time Bokan: historical slowness reports; no fresh r7 benchmark.
+   CONTROLS / LIMITED POSITIVE RESULTS:
+   * Rockman & Forte BG: user-reported resolved during r7; not whole-game certified.
+   * One Piece sky: original and patched title-specific r6 path emulator-tested
+     and DSpico-tested; current r7 generic BG comparison reported correct.
+     This is distinct from the OPEN character-motion issue.
+   * Mahjong Touryuumon: custom.r5+ speed/sound/input DSpico-tested; native
+     instruction prefetch timing still pending.
+   * Armored Unit menu BG shake: historical report matches native HW.
+   * Chou Denki Card Game: requires NVRAM initialization, first page last item.
+   * Beatmania: memory-capacity limitation, not a new regression here.
 
-	Recommendation: do 1 and its diagnostic part of 2 together; then 3 and 4.
-	Do not mix CPU timing, audio, sprite windows or broad rewrites into the
-	remaining character-corruption investigation.
-
-	Remaining accuracy work:
-	Handle Contrast High/Low for WSC, change Y every other frame.
-	Map serial port to debug out. Test!
-	Change cpuReadMem20(W) to return value in r1 instead of r0?
-		Use r3 as write-back register to begin with.
-	Run mono games in 4 color mode?
-	Add hardware vectors for opcode-fetch ROM waitstates.
-	Improve partial 8x8 sprite-window edge clipping if a cheaper renderer is found.
-	Sprite priority is constrained by the DS layer model; evaluate before promising a fix.
-
-GFX:
-	See Sphinx todo.
-
-GUI:
-	Eng/Jap: "Digimon Tamers - Battle Spirit" has jumper on the cart.
-
-Mem:
-
-CPU:
-	See ARMV30MZ Todo.
-
-Sound:
-	See Sphinx todo.
-
-Misc:
-	Armored Unit, menu background shakes. Just as on HW!
-	Cardcaptor Sakura, timing sensitive.
-	Dekadence - Vesilintu, very slow.
-	Mingle Magnet, slow. (67-68fps)
-	Mr. Driller, also sensitive to timing (fetch opcode, pl vs gt).
-	Nazo Ou Pocket, slow. (60-61, 62)
-	Puyo Puyo Tsuu, slow. (62-63, 64)
-	Side Pocket, slow. (65-66)
-	Time Bokan Series, slow. (64-65)
-
-Games Not Working:
-
-Games Not Working Fixed:
-	Bakusou Dekotora Densetsu. Unzip craps out.
-	Chou Denki Card Game, crashes.
-		* Needs initialization, last item on first page.
-	ClockTower, doesn't start.
-		* Needs noise calculation even if ch4 noise is disabled.
-	Hanjuku Hero, crashes.
-		* Reads mapper register 0xC0 which was not reset correctly.
-	Kurupara, crashes. Crashes because of LineCompareIRQ on line 0.
-		* Fixing interrupt handling in Sphinx fixed it.
-	Riviera freezes on a black screen after the chapter 1 screen.
-		* Fixed in V0.4.0.
-	Tonpuusou. Can't start.
-		* HBlank interrupt should always be run when value = 1.
-	Ultraman, division by zero crash.
-		* If watching the whole intro before starting.
-		* Fixing interrupt handling in Sphinx fixed it.
-	With You - Mitsumete Itai, halts at black screen.
-		* Waiting for EEPROM ready.
-	Xi Little. Can't start.
-		* Waiting on sample playing.
-
-Games With Glitches:
-	One Piece original/patched and Digimon Battle Spirit 1.0/1.5/Frontier:
-		* Generic r7 renderer substantially improves character graphics, but some
-		  rapid-motion corruption remains on DSpico. Highest-priority follow-up.
-	Dicing Knight. shadows are in front of player.
-		* Sprite priority is wrong for sprites that are above FG.
-	Digimon - Anode Tamer & Cathode Tamer, missing background gradient in battles.
-		* Changes palette per line.
-	Final Fantasy, Sprites show in dialog windows.
-		* Sprite windows.
-	Final Lap 2000, road colors incorrect.
-		* Changes palette per line.
-	Final Lap Special, road colors incorrect.
-		* Changes palette per line.
-	Makaimura, gargoyles in intro should not show up on the right, first boss sprites are glitchy.
-		* Sprite Window and...?
-	Neon Genesis Evangelion, sprites overlap avatar images.
-		* Sprite windows and sprite priority.
-	Romancing Sa-Ga, sprites overlap text boxes.
-		* Sprite windows and sprite priority.
-	Sorobang, incorrect tiles.
-		* Needs all 1024 tiles in 4color mode.
-	WonderSwanColor BIOS, incorrect tiles.
-		* Needs all 1024 tiles in 4color mode.
-
-Games With Glitches Fixed:
-	Rockman & Forte - Mirai Kara no Chousensha, background issue.
-		* User reports resolved during r7-test BG verification. Retained in r7;
-		  this is not an exhaustive whole-game certification.
-	Mahjong Touryuumon, speed too fast.
-		* Fixed in custom.r5 by honoring $A0 bit 3 for instruction-stream
-		  ROM fetches; speed, sound and input are hardware-confirmed.
-	From TV Animation One Piece - Grand Battle Swan Colosseum, incorrect battle sky.
-		* Fixed on original and Korean-patched ROMs with write-time background-color
-		  and palette RAM events replayed through DS BG_PALETTE[0].
-	Battle Spirits, missing status bar.
-		* Changes tilemap address.
-	Cardcaptor Sakura, book dissolve in intro glitches the second time.
-		* Requires "correct" noise calculation.
-	Chaos Gear, Intro not showing.
-		* Sensitive to serial interrupt.
-		* IRQ are taken 1 instruction after SEI/STI.
-	Final Fantasy. Characters when inputing name can glitch.
-		* Depending on which scan line VBlank is and how many total scan lines.
-		* Interrupts were not acknowledged during rep instructions.
-	From TV Animation One Piece - Grand Battle Swan Colosseum, missing status bar.
-		* Changes tilemap address.
-	Front Mission, missing some text boxes.
-		* Changes tilemap address.
-	Magical Drop, playfield flickers horizontaly. Sensitive to interrupt (and IRET, HALT) timing.
-		* Fix: Sprite DMA consumes cycles?
-	Mahjong Touryuumon, no sound.
-		* Sound fix by emulating serial out buffer empty irq.
-	Makai Toushi Sa-Ga, textboxes overlap sprites and background.
-		* Changes tilemap address.
-	SD Gundam Operation U.C, missing status bar.
-		* Changes tilemap address.
-	Ultraman, Logo slide down doesn't reach top of screen as on real HW.
-		* Interrupts were not acknowledged during rep instructions.
+6. Historical completed work / reference notes
+   * See History.txt and Docs/ReleaseValidation-r7.md for released changes.
+   * Through r6: mono RAM bounds, RTC calendar, NitroSwan-local DSpico ROM cache,
+     filename/load stability, multilingual UI/fonts, cheats, settings directory,
+     NVRAM autosave and direct Pico Loader launch handling.
+   * r6 original/patched One Piece sky/character validation was title-specific.
+   * r7 generalized color BG events, 512-tile OBJ snapshots and conditional BG
+     banks; user confirmed improvement, not complete character-motion repair.
+   * Older resolved boot/status-bar/interrupt/sound reports remain in repository
+     history; they are not a current whole-game compatibility guarantee.
+   * Historical cartridge needs and speedhack reference list below is retained;
+     consult source/SpeedHacks.s for current behavior, not this list alone.
 
 Needs Large (256kB) SRAM:
 	Dicing Knight.

@@ -16,7 +16,15 @@ really require different behavior, distinguish them with the official revision
 field and document the hardware evidence.
 
 Renderer correctness must not use game identity. The generic video core selects
-the BG palette/backdrop path from the active WonderSwan hardware state and commits
-OBJ tiles with the sprite table at the emulated frame boundary. Product identity
+the BG palette/backdrop path from the active WonderSwan hardware state. OBJ tile
+readiness is recorded at the emulated frame boundary and tiles are published at
+host VBlank; this is not proof of atomic OAM/tile/palette ownership. Product identity
 may still be used by a diagnostic build to select trace targets, but not to decide
 which hardware behavior is emulated.
+
+Diagnostic selection chooses what to observe (trace scene, logical test name,
+exact input SHA-256). Behavior selection chooses how the emulated hardware works.
+Only the former may select a particular dump by hash. Do not add a ROM-hash
+whitelist to enable the renderer or exclude a translation patch.
+Private manifests should contain logical IDs and SHA-256, not local filenames,
+paths, ROM bytes or saves; see [DevelopmentGuide.md](DevelopmentGuide.md).

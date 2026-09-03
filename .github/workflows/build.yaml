@@ -23,10 +23,19 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends gcc libc6-dev python3
 
+      - name: Validate repository hygiene
+        run: |
+          # Checkout's temporary HOME does not carry into container run steps.
+          # Trust only this job's checked-out repository, never a wildcard.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python3 tools/validate_repository.py
+
       - name: Validate localization and font coverage
         run: python3 tools/validate_localization.py
 
       - name: Run core regression tests
+        env:
+          REQUIRE_HOST_CC: '1'
         run: python3 tools/run_core_regressions.py
 
       - name: Build DS version

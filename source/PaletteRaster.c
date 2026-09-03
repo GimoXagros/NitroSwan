@@ -1,5 +1,4 @@
 #include <nds.h>
-#include <string.h>
 
 #include "PaletteRaster.h"
 #include "Cart.h"
@@ -23,7 +22,6 @@ typedef struct {
 
 typedef struct {
 	u16 base[WS_BG_COLORS];
-	u16 lineStart[WS_VISIBLE_LINES + 1];
 	PaletteDelta delta[MAX_BG_PALETTE_DELTAS];
 	u16 count;
 	u16 dropped;
@@ -75,7 +73,6 @@ static void snapshotBase(PaletteDeltaFrame *frame) {
 static void resetCaptureFrame(PaletteDeltaFrame *frame) {
 	frame->count = 0;
 	frame->dropped = 0;
-	memset(frame->lineStart, 0, sizeof(frame->lineStart));
 }
 
 static void setBaseColor(PaletteDeltaFrame *frame, unsigned int index, u16 rawColor) {
@@ -185,7 +182,8 @@ void paletteRasterFrameComplete(void) {
 		return;
 	}
 
-	PaletteDeltaFrame *finished = &frames[captureFrame];
+	const int finishedFrame = captureFrame;
+	PaletteDeltaFrame *finished = &frames[finishedFrame];
 	paletteRasterEventsFrame = finished->count;
 	paletteRasterDroppedFrame = finished->dropped;
 	if (finished->count > paletteRasterEventsMaximum) {
@@ -194,17 +192,12 @@ void paletteRasterFrameComplete(void) {
 	if (finished->dropped > paletteRasterDroppedMaximum) {
 		paletteRasterDroppedMaximum = finished->dropped;
 	}
-	u16 cursor = 0;
-	for (unsigned int line = 0; line < WS_VISIBLE_LINES; line++) {
-		finished->lineStart[line] = cursor;
-		while (cursor < finished->count && finished->delta[cursor].line == line) {
-			cursor++;
-		}
-	}
-	finished->lineStart[WS_VISIBLE_LINES] = finished->count;
-
-	readyFrame = captureFrame;
-	captureFrame = nextFreeFrame(activeFrame, readyFrame);
+	readyFrame = finishedFrame;
+	// VBlank may consume readyFrame and replace it with -1 before the next
+	// statement. Always exclude the published frame, even if it is now active.
+	// activeFrame can be either the old active frame or finishedFrame; excluding
+	// it AND finishedFrame is safe in both cases without masking host interrupts.
+	captureFrame = nextFreeFrame(activeFrame, finishedFrame);
 	resetCaptureFrame(&frames[captureFrame]);
 	snapshotBase(&frames[captureFrame]);
 }

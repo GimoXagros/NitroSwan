@@ -13,3 +13,6 @@ compile_commands.json
 *.eeprom
 *.ram
 __pycache__/
+# Private ROM/BIOS/save inputs and machine-specific reports: never publish.
+/.local-test-assets/
+/local-reports/

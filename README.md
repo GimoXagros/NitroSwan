@@ -34,6 +34,11 @@ core.
 
 검증 범위와 남은 제한은 [r7 검증 기록](Docs/ReleaseValidation-r7.md),
 다음 우선순위·난이도는 [TODO](NitroSwan_todo.txt)를 참고하십시오.
+개발 절차·검증 수준·비공개 테스트 자료 정책은
+[개발 가이드](Docs/DevelopmentGuide.md), 2026-09-03 정비 결과는
+[r7 기준선 감사](Docs/BaselineAudit-r7.md)에 기록합니다.
+CI의 소스/모델 검사와 빌드 성공은 DSpico 실기 또는 native WonderSwan
+검증을 대신하지 않습니다.
 
 ## 유지되는 주요 기능
 
@@ -112,7 +117,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
 * Save NVRAM: Save non volatile ram (EEPROM/SRAM) for the currently running game.
   NitroSwan writes native `.ram` or `.eeprom` files in `/nitroswan`; raw `.sav`
   files of the expected cartridge size are also accepted when loading.
-* Load Patch: Apply an IPS patch to the currectly loaded rom.
+* Load Patch: Apply an IPS patch to the currently loaded ROM.
 * Cheats: Enable or disable cheats loaded from the current game's `.cht` file.
 * Save Settings: Save the current settings (and internal EEPROM).
 * Reset Game: Reset the currently running game.
@@ -135,7 +140,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
   * Select WS Crystal Bios: Load a real WS Crystal Bios.
   * Import Internal EEPROM: Load a special internal EEPROM.
   * Clear Internal EEPROM: Reset internal EEPROM.
-  * Headphones: Select whether heaphones are connected or not.
+  * Headphones: Select whether headphones are connected or not.
   * Cpu speed hacks: Allow speed hacks.
   * Language: Select English, Japanese, or Korean menus.
 * Settings:
@@ -151,7 +156,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
   * Autosave Settings: This will save settings when leaving menu if any changes are made.
   * Autopause Game: Toggle if the game should pause when opening the menu.
   * Powersave 2nd Screen: If graphics/light should be turned off for the GUI screen when menu is not active.
-  * Emulator on Bottom: Select if top or bottom screen should be used for emulator, when menu is active emulator screen is allways on top.
+  * Emulator on Bottom: Select if top or bottom screen should be used for emulator, when menu is active emulator screen is always on top.
   * Autosleep: Doesn't work.
 * WonderWitch: Tools for interacting with a WonderWitch.
   * See WonderWitch.md for more information.
@@ -205,14 +210,21 @@ make NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
+Historical r2-r6 validation (not a new r7 whole-game certification):
 The r2 DSi base was verified with Pico Launcher/DSpico on Nintendo 3DS for
 direct ROM launch, gameplay, menu operation, automatic folder/config creation,
 NVRAM save creation, exit-time saving and save reload. The r3 bank cache is
 covered by host regressions and complete DS/DSi builds. The One Piece combat
-character and battle-sky fixes were verified for both the Japanese original and
+character and battle-sky fixes in the r6 title-specific path were verified for both the Japanese original and
 Korean-patched ROM on DSpico hardware; graphics, speed, sound and input remained
 normal. Mahjong Touryuumon's speed, sound and input were also verified on DSpico
 hardware.
+
+The current r7 generic renderer is improved, but residual One Piece/Digimon
+character-motion corruption remains open. Keep commercial ROMs, external BIOS
+dumps and saves local-only in `.local-test-assets/`; never attach them to PRs,
+Actions artifacts or releases. Existing fonts and replacement IPL assets are
+legitimate tracked build inputs, not private test dumps.
 
 Run `python3 tools/validate_localization.py` before building. It verifies the
 translation table, binary font structure, duplicate keys, and complete

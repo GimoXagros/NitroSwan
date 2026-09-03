@@ -1,5 +1,20 @@
 # v0.7.7-custom.r7 validation scope
 
+This is the historical 2026-09-02 release record, not the latest development
+test report. Later maintenance findings belong in [BaselineAudit-r7.md](BaselineAudit-r7.md).
+
+- Release/main commit and dereferenced tag `v0.7.7-custom.r7`:
+  `06178156341d70fd876174272d04f5cb5d440a2b` (rechecked 2026-09-03).
+- Build source: `e31a53b8cd1b8197cabec15df9278eaff7adbcfc`, with an identical
+  tracked tree to the merge commit above.
+- Sphinx gitlink: `97bf9fe4fdbeb0f761b22fe8e1fa68b5670a364e`.
+- Release CI: [pre-merge success](https://github.com/GimoXagros/NitroSwan/actions/runs/33624417402)
+  and [main success](https://github.com/GimoXagros/NitroSwan/actions/runs/33624531321).
+- Published DS SHA-256: `6d663ec181509eeb99dbdf9aed47bf345e5b6d3ec822d136310333f2d2c35e9d`.
+- Published DSi SHA-256: `d356f54e1ad01eb323b915efc95d9186533ecd029d18b21266df6eece2c82606`.
+
+No post-release maintenance changes or new tests are retroactively credited to r7.
+
 ## Release decision
 
 On 2026-09-02 the user approved release after DSpico hardware testing, while
@@ -42,6 +57,10 @@ revisions are included in the release's BUILD_INFO.txt and SHA256SUMS.txt.
 5. Add VBlank copy costs to performance accounting: the current
    `objBytesCopiedFrame` metric counts snapshot seeding, not every publication
    copy. Do not use it as a total-bandwidth measurement.
+   It resets at each emulated WS frame and is 0 or 16384; its maximum is a
+   session high-water mark, not an aggregate. A host VBlank is a different
+   boundary. Separate seed/publication counters and their aggregation policy
+   remain follow-up work; no total counter was validated in the release.
 
 Upstream BG-only PR #59 remains separate from the custom OBJ implementation.
 CPU timing PR #60 is not changed without new timing evidence.

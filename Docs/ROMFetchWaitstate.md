@@ -32,9 +32,28 @@ still proves that the game enables the ROM wait state.
   mapped host pointer.  `$00000-$1FFFF`, plus an active boot-ROM overlay, are
   excluded.
 
-`source/Memory.s` is intentionally unchanged.  In particular, the
-`cpuWriteMem20` r0/r1 preservation contract and all normal data-access paths
-remain the custom.r5 paths.
+The fetch-wait candidate does not add penalties to ordinary `Memory.s` data
+reads/writes. Later r6/r7 work separately added palette-write notification there;
+do not describe the whole file as unchanged from custom.r5. The `cpuWriteMem20`
+r0/r1 preservation requirement still applies, including unaligned word writes.
+
+## Upstream status (2026-09-03 snapshot)
+
+[NitroSwan PR #60](https://github.com/FluBBaOfWard/NitroSwan/pull/60) remains
+Open/Draft, head `de837923184219f075496928eda0bd2ded15cfad`. On 2026-08-30
+the maintainer requested proper instruction prefetch rather than an instruction
+byte penalty justified by one title. The 2026-08-31 reply accepted that request:
+keep the candidate Draft, measure bus-width/refill/control-flow timing first,
+then consider a low-cost generic implementation. Sphinx #5 and ARMV30MZ #6
+are the separate dependency PRs. None is rewritten by the baseline audit.
+
+The 2026-09-03 PR review follow-up updated all three bodies/comments to make
+this hold explicit; their implementation heads and dependency pointers are
+unchanged. The maintainer's prefetch objection is not resolved by these edits.
+
+The custom build's Mahjong DSpico result is a game-level improvement, NOT
+validation of a native V30MZ prefetch/refill model. Native WonderSwan timing
+vectors remain pending. See [BaselineAudit-r7.md](BaselineAudit-r7.md).
 
 ## Mahjong evidence
 

@@ -47,6 +47,10 @@ keep the candidate Draft, measure bus-width/refill/control-flow timing first,
 then consider a low-cost generic implementation. Sphinx #5 and ARMV30MZ #6
 are the separate dependency PRs. None is rewritten by the baseline audit.
 
+The 2026-09-03 PR review follow-up updated all three bodies/comments to make
+this hold explicit; their implementation heads and dependency pointers are
+unchanged. The maintainer's prefetch objection is not resolved by these edits.
+
 The custom build's Mahjong DSpico result is a game-level improvement, NOT
 validation of a native V30MZ prefetch/refill model. Native WonderSwan timing
 vectors remain pending. See [BaselineAudit-r7.md](BaselineAudit-r7.md).

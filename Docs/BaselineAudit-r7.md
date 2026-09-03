@@ -94,6 +94,8 @@ clean operations in the above worktrees. No ROM/BIOS/save was opened or moved.
 ## Cross-repository PR snapshot
 
 All six entries were **OPEN / Draft**, head owner GimoXagros. Dates are UTC.
+This table records the initial inventory; the explicitly authorized incremental
+PR #59 correction and review follow-up are recorded separately below.
 
 | Upstream PR | Head branch / exact SHA | Base SHA | Last update |
 | --- | --- | --- | --- |
@@ -263,8 +265,75 @@ or hardware certification is inferred from this maintenance build.
 Initial commits: tooling `99f4b52`, documentation `ef0890c`, minimal palette fix /
 dead-state cleanup / audit counterexamples `a95c96f`. A following documentation
 commit records these results; source/build inputs are unchanged by that record.
-Draft PR and CI status are recorded once the remote run completes. Main,
-release/tag, History dates and all active PR/gitlink pointers remain unchanged.
+At this initial candidate stage, main, release/tag, History dates and all active
+PR/gitlink pointers remained unchanged. See the later follow-up below for the
+CI result and the separately authorized incremental update to PR #59.
+
+## CI and full PR review follow-up — 2026-09-03
+
+The user subsequently authorized reviewing all related PRs, applying justified
+corrections and posting comments. This permits the minimal ordinary follow-up
+commit to #59 below, not history rewriting or importing the custom renderer.
+
+### Maintenance CI
+
+- Draft maintenance [PR #9](https://github.com/GimoXagros/NitroSwan/pull/9).
+- Initial CI failed before tests because Git rejected checkout ownership in the
+  container. Diagnostic commit `c4c407f` exposed the actual stderr. Following
+  explicit user approval, `61c5c8a` registers only `$GITHUB_WORKSPACE` as
+  safe.directory within that CI job. No wildcard trust, filesystem ownership
+  change or host-wide repository exemption was added.
+- [Run 33767642405](https://github.com/GimoXagros/NitroSwan/actions/runs/33767642405)
+  at `61c5c8a9277035798518e2f8d462c9e935a195da`: **SUCCESS**. Logs confirm
+  hygiene (181 recursive entries), localization, **66 Python tests**, actual
+  host C RTC-calendar and DSpico ROM-cache regressions, DS and DSi/DSpico
+  builds, NDS checks and artifact upload. The extra test asserts scoped CI trust.
+- Local compileall, hygiene, localization and all 66 Python tests also pass;
+  local host C remains explicit SKIP. The four existing warnings per build
+  remain unchanged. No fresh emulator or hardware result is inferred.
+- Application/build inputs are unchanged from the candidate built above;
+  later commits only change CI/tool diagnostics, one tooling test and documents.
+
+### PR decisions and replies
+
+All open PR bodies, issue comments, review submissions, inline comments and
+current diffs were checked. The six upstream PRs remain Open/Draft. No new
+maintainer response since the dates in the initial table was found. The replies
+below are our follow-up, not evidence that the maintainer accepted the changes.
+
+| PR | Action and evidence |
+| --- | --- |
+| NitroSwan #59 | A1 also existed in this minimal branch. Ordinary commit `b308a6b07a9634ed2f2bb5d4b7c86499bd7de6f0` advances `8820f67`; only PaletteRaster.c and its test change. Pin finished slot; add old-race counterexample and corrected handoff source/model checks. [Reply](https://github.com/FluBBaOfWard/NitroSwan/pull/59#issuecomment-5527448933) clarifies current write-time capture versus the obsolete per-scanline comment and keeps callback/restore review open. |
+| NitroSwan #60 | Code/head `de83792` unchanged. Body and [reply](https://github.com/FluBBaOfWard/NitroSwan/pull/60#issuecomment-5527448952) explicitly acknowledge that per-byte charging does not resolve the requested proper prefetch/refill model. Native timing vectors still pending. |
+| Sphinx #4 | Code/head `3266de3` unchanged. [Reply](https://github.com/FluBBaOfWard/Sphinx/pull/4#issuecomment-5527449012) and host contract distinguish six-register preservation from proof of 8-byte C-call stack alignment. Host A1 correction does not require a new hook revision. |
+| Sphinx #5 | Code/head `025f1db` unchanged. Body and [reply](https://github.com/FluBBaOfWard/Sphinx/pull/5#issuecomment-5527449776) explicitly keep this dependency pending the #60 prefetch/refill review. |
+| ARMV30MZ #6 | Code/head `b989c01` unchanged. [Reply](https://github.com/FluBBaOfWard/ARMV30MZ/pull/6#issuecomment-5527449804) records the same dependency hold; obsolete future-companion wording replaced with actual PR links. |
+| WSRTC #2 | Code/head `7ade8f8` unchanged. Maintainer's August 23 request to wait for a real cartridge takes precedence over our earlier unqualified fix claim. Body and [reply](https://github.com/FluBBaOfWard/WSRTC/pull/2#issuecomment-5527449813) label no-carry/leap-year changes as disputed proposals. 307,200 Python candidate-model cases are not ARM execution or independent RTC hardware evidence. No further RTC implementation or gitlink change. |
+| NDS_Shared #5 (closed) | Withdrawal remains in effect. The maintainer's MPU/alias concern was already acknowledged; custom DSpico handling is in NitroSwan. No reopen, branch deletion or redundant comment. |
+| WSCart #1 (closed) | Superseded calendar-pointer proposal remains closed. No reopen or follow-up gitlink while RTC #2 is on hold. |
+
+PR #59 validation: one new source assertion failed against the old source, then
+all **5 source/model tests passed**. Four distinct fresh object directories
+built successfully: DS BG-only, DSi BG-only, DS capture-only and DS replay-only.
+All four pass header/banner CRC, executable-range, icon and six-title checks.
+The DSi profile here is the upstream DSi linker profile, not the custom DSpico
+ROM-cache profile. Five existing compiler warnings per profile (languageSet,
+checkTimeOut, two CartridgeRAM temporaries, crc32) and the missing optional data
+directory notice remain; no new compiler warning was introduced.
+
+| PR #59 local test binary (not released) | Bytes | SHA-256 |
+| --- | ---: | --- |
+| DS BG-only | 272384 | `37c17cf6cf25153a433a6db7ae78e1a13ba3bfae00d772b1c3cbad23745d36e2` |
+| DSi BG-only | 272384 | `c851822c240f5ac8599dab484804794ffefafe32696568bb82a3241a6de14a40` |
+| DS capture-only | 272384 | `47cc288ff29c99f8dab56654815ee1f4d6fa6ef716b5527e952d26af6dda8dd5` |
+| DS replay-only | 272384 | `a29b50543ac18202443eace62f8e7f8bd1061aacb0748ece924f1b14e3b60cc9` |
+
+The #59 branch, its minimal Sphinx pointer and its ancestry are preserved;
+only its ordinary follow-up head advances. No merge/rebase/reset/squash/force
+push, new feature, OBJ/timing experiment, main/release/tag change or submodule
+pointer change occurred. Test bytecode/build artifacts remain local and are not
+staged. The current r7 release does NOT contain these unmerged safety changes.
+Readiness remains **NOT READY** for A2-A4, despite successful maintenance CI.
 
 ## Next work recommendation
 

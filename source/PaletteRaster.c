@@ -167,8 +167,11 @@ void paletteRasterFrameComplete(void) {
 		return;
 	}
 
-	readyFrame = captureFrame;
-	captureFrame = nextFreeFrame(activeFrame, readyFrame);
+	// VBlank can consume/clear readyFrame between the argument loads below.
+	// Keep excluding the completed slot even after it becomes active.
+	const int finishedFrame = captureFrame;
+	readyFrame = finishedFrame;
+	captureFrame = nextFreeFrame(activeFrame, finishedFrame);
 	resetCaptureFrame(&frames[captureFrame]);
 	snapshotBase(&frames[captureFrame]);
 }

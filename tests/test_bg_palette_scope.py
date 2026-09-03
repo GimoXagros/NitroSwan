@@ -1,4 +1,4 @@
-"""Source-contract checks for the upstream BG-only patch."""
+"""Source/model checks for the upstream BG-only patch, not hardware tests."""
 from pathlib import Path
 import unittest
 
@@ -6,6 +6,35 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BgPaletteScope(unittest.TestCase):
+    def test_old_handoff_has_interrupt_counterexample(self):
+        active, finished = 1, 0
+        ready = finished
+        loaded_active = active
+        # VBlank between the two volatile argument loads consumes ready.
+        active, ready = ready, -1
+        capture = next(i for i in range(3) if i not in (loaded_active, ready))
+        self.assertEqual(capture, active)  # OLD failure, not proof of safety.
+
+    def test_finished_slot_is_excluded_across_handoff_interrupts(self):
+        for active in (-1, 0, 1, 2):
+            for finished in range(3):
+                if active == finished:
+                    continue
+                for before_active_load in (False, True):
+                    observed_active = finished if before_active_load else active
+                    capture = next(i for i in range(3)
+                                   if i not in (observed_active, finished))
+                    # A subsequent VBlank can only retain active or consume
+                    # this finished slot. Neither may be the new writer.
+                    self.assertNotEqual(capture, finished)
+                    if not before_active_load:
+                        self.assertNotEqual(capture, active)
+        code = (ROOT / "source/PaletteRaster.c").read_text(encoding="utf-8")
+        self.assertIn("const int finishedFrame = captureFrame;", code)
+        self.assertIn("readyFrame = finishedFrame;", code)
+        self.assertIn("nextFreeFrame(activeFrame, finishedFrame)", code)
+        self.assertNotIn("nextFreeFrame(activeFrame, readyFrame)", code)
+
     def test_hardware_selection_without_title_identity(self):
         code = (ROOT / "source/PaletteRaster.c").read_text(encoding="utf-8")
         self.assertIn("header != NULL && gSOC != SOC_ASWAN", code)

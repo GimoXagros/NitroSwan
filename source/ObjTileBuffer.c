@@ -177,8 +177,10 @@ void videoTileBufferFrameComplete(void) {
 	// VBlank. Only publish the character bank belonging to a completed frame.
 	wsvBgReadyTileOffset = wsvBgTileOffset;
 	if (objSnapshotEnabled) {
-		// Publish the pointer before the generation. An IRQ between these stores
-		// safely defers the copy rather than exposing an incomplete snapshot.
+		// Pointer and generation are separate stores, not an atomic publication.
+		// If the preceding ready generation is still pending, VBlank can observe
+		// a newer pointer with the older generation. See the r7 baseline audit;
+		// coordinated OBJ/OAM ownership remains a separate renderer follow-up.
 		wsvObjReadyTileOffset = wsvObjTileOffset;
 		objReadyGeneration = objBuildGeneration;
 	}

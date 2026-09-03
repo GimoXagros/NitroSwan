@@ -19,6 +19,9 @@ extern volatile u16 wsvBgReadyTileOffset;
 extern u8 wsvObjTileSnapshots[];
 extern volatile u16 objTilesConvertedFrame;
 extern volatile u16 objTilesConvertedMaximum;
+// Seed-only bytes in the latest emulated WS frame (0 or 16384), and its
+// session maximum. Excludes host-VBlank publication; NOT total OBJ bandwidth.
+// WS-frame reset and host-VBlank publication use different clock domains.
 extern volatile u32 objBytesCopiedFrame;
 extern volatile u32 objBytesCopiedMaximum;
 extern volatile u32 objBufferSwapCount;

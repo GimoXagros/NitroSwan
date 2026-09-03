@@ -12,22 +12,45 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def probe_host_compiler(compiler: str) -> bool:
+    """Reject cross compilers and compilers whose output cannot run locally."""
+    try:
+        with tempfile.TemporaryDirectory(prefix="nitroswan-host-probe-") as temp:
+            executable = Path(temp) / "probe.exe"
+            subprocess.run(
+                [compiler, str(ROOT / "tests/host_compiler_probe.c"),
+                 "-o", str(executable)],
+                cwd=ROOT, check=True, capture_output=True, timeout=30,
+            )
+            result = subprocess.run(
+                [str(executable)], check=True, capture_output=True,
+                text=True, timeout=10,
+            )
+            return result.stdout.strip() == "nitroswan-host-probe"
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def find_c_compiler() -> str | None:
-    candidates = [
-        os.environ.get("CC"),
-        shutil.which("cc"),
-        shutil.which("gcc"),
-        shutil.which("clang"),
-        r"C:\Users\rlgh0\codex-build-tools\msys64\mingw64\bin\gcc.exe",
-    ]
+    # HOST_CC and CC are executable paths/names, not shell command strings.
+    candidates = [os.environ.get("HOST_CC"), "cc", "gcc", "clang",
+                  os.environ.get("CC")]
+    seen = set()
     for candidate in candidates:
-        if candidate and Path(candidate).is_file():
-            return str(candidate)
+        if not candidate:
+            continue
+        resolved = shutil.which(candidate)
+        if not resolved or resolved in seen:
+            continue
+        seen.add(resolved)
+        if probe_host_compiler(resolved):
+            return resolved
+        print(f"SKIP compiler {Path(resolved).name}: host compile/run probe failed")
     return None
 
 
 def run(command: list[str]) -> None:
-    print("+", " ".join(command))
+    print("+", " ".join(command), flush=True)
     subprocess.run(command, cwd=ROOT, check=True)
 
 
@@ -35,40 +58,24 @@ def main() -> int:
     run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"])
 
     compiler = find_c_compiler()
-    if compiler:
-      with tempfile.TemporaryDirectory(prefix="nitroswan-tests-") as temp_dir:
-        exe = Path(temp_dir) / ("rtc_calendar_test.exe" if os.name == "nt" else "rtc_calendar_test")
-        run([
-            compiler,
-            "-std=c11",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-Isource/WSCart/WSRTC",
-            "tests/test_rtc_calendar.c",
-            "source/WSCart/WSRTC/WSRTCCalendar.c",
-            "-o",
-            str(exe),
-        ])
-        run([str(exe)])
+    if compiler is None:
+        print("SKIP host C regressions: no working host compiler; "
+              "Python regressions passed. Set HOST_CC to a host C compiler.")
+        # CI installs a host compiler; a missing one there must not look green.
+        return 1 if os.environ.get("REQUIRE_HOST_CC") == "1" else 0
 
-        cache_exe = Path(temp_dir) / ("dspico_rom_cache_test.exe" if os.name == "nt" else "dspico_rom_cache_test")
-        run([
-            compiler,
-            "-std=c11",
-            "-Wall",
-            "-Wextra",
-            "-Werror",
-            "-Isource",
-            "tests/test_dspico_rom_cache.c",
-            "source/DspicoRomCache.c",
-            "-o",
-            str(cache_exe),
-        ])
-        run([str(cache_exe)])
-
-    else:
-        print("Host C compiler unavailable; C vectors will run in CI, Python vectors passed locally.")
+    with tempfile.TemporaryDirectory(prefix="nitroswan-tests-") as temp_dir:
+        cases = (
+            ("rtc_calendar", "source/WSCart/WSRTC",
+             "source/WSCart/WSRTC/WSRTCCalendar.c"),
+            ("dspico_rom_cache", "source", "source/DspicoRomCache.c"),
+        )
+        for name, include, source in cases:
+            exe = Path(temp_dir) / f"{name}_test.exe"
+            run([compiler, "-std=c11", "-Wall", "-Wextra", "-Werror",
+                 f"-I{include}", f"tests/test_{name}.c", source, "-o", str(exe)])
+            run([str(exe)])
+    print("PASS host C regressions: RTC calendar and DSpico ROM cache")
     return 0
 
 

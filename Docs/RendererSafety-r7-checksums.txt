@@ -1,0 +1,4 @@
+43f43acddc14d5f8a6c0e363a83a7b3d6e69c3a12cfcb3139c98a98d1c53a311  NitroSwan-DS-r7-safety-test.nds
+814431f26cbb88a16b35bf08c882a94d8ea072737088b0ad64adef284b94a8df  NitroSwan-DSi-r7-safety-test.nds
+4c0a8563e03e3a2e69c6808e66762dc97b9f21e245b5d85b9c058db57fddada1  NitroSwan-DSi-r7-abi-selftest-final.nds
+34228d8e5ab2600bb9d91f64c99b31e1e0c40d54570f6840c5cb5c77d7b8bb05  NitroSwan-DSi-r7-video-trace-final.nds

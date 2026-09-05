@@ -33,8 +33,9 @@ class BaselineAuditTests(unittest.TestCase):
                     self.assertNotEqual(capture, finished)
         source = (ROOT / "source/PaletteRaster.c").read_text(encoding="utf-8")
         self.assertIn("const int finishedFrame = captureFrame;", source)
-        self.assertIn("readyFrame = finishedFrame;", source)
-        self.assertIn("nextFreeFrame(activeFrame, finishedFrame)", source)
+        self.assertIn("pendingFrame = finishedFrame;", source)
+        self.assertIn("readyFrame = pendingFrame;", source)
+        self.assertIn("captureFrame = nextFreeFrame(activeFrame, readyFrame);", source)
 
     def test_dead_line_index_not_part_of_replay(self):
         source = (ROOT / "source/PaletteRaster.c").read_text(encoding="utf-8")
@@ -42,34 +43,29 @@ class BaselineAuditTests(unittest.TestCase):
         self.assertIn("active->delta[replayCursor++]", source)
         self.assertIn("replayCursor < active->count", source)
 
-    def test_obj_metrics_remain_explicitly_seed_only(self):
+    def test_obj_metrics_separate_seed_and_publication_clocks(self):
         source = (ROOT / "source/ObjTileBuffer.c").read_text(encoding="utf-8")
         header = (ROOT / "source/ObjTileBuffer.h").read_text(encoding="utf-8")
-        self.assertIn("Seed-only", header)
+        self.assertIn("objSeedBytesFrame", header)
+        self.assertIn("objPublishBytesHostFrame", header)
         begin = source[source.index("void objTileBufferBeginFrame"):]
-        self.assertIn("objBytesCopiedFrame = 0;", begin)
-        self.assertIn("objBytesCopiedFrame = OBJ_BANK_BYTES;", begin)
-        publish = source[source.index("void videoTileBufferVBlank"):]
-        self.assertNotIn("objBytesCopiedFrame =", publish)
+        self.assertIn("objSeedBytesFrame = 0;", begin)
+        self.assertIn("objSeedBytesFrame = OBJ_BANK_BYTES;", begin)
+        publish = source[source.index("const void *videoTileBufferVBlank"):]
+        self.assertIn("objPublishBytesHostFrame = 0;", publish)
+        self.assertIn("objPublishBytesHostFrame = OBJ_BANK_BYTES;", publish)
 
-    def test_obj_metadata_is_not_a_proof_of_atomic_frame_publication(self):
-        # Known follow-up counterexample: old generation is still unconsumed.
-        ready_generation, published_generation = 7, 6
-        ready_offset = 0
-        ready_offset = 512  # first store of the next completion
-        # VBlank before generation=8: new pointer gets labelled generation 7.
-        publication = (ready_offset, ready_generation)
-        self.assertNotEqual(ready_generation, published_generation)
-        self.assertEqual(publication, (512, 7))
-        self.assertNotEqual(publication, (512, 8))
-        # This demonstrates a metadata gap, NOT its frequency or visible impact.
+    def test_obj_metadata_uses_one_completed_frame_descriptor(self):
+        source = (ROOT / "source/ObjTileBuffer.c").read_text(encoding="utf-8")
+        self.assertIn("CompletedFrameDescriptor", source)
+        self.assertIn("readyFrameSlot = pendingFrameSlot", source)
+        self.assertNotIn("objReadyGeneration", source)
 
-    def test_graphics_callback_stack_alignment_requires_full_call_chain(self):
+    def test_graphics_callback_stack_alignment_is_repaired_for_full_chain(self):
         # C -> run (9 words) -> scanline (1) -> endFrame (1) -> gfxEndFrame
-        # (6) -> C-call save (2). The r7 normal frame-complete entry is 4 mod 8.
-        stack_mod8 = (-4 * (9 + 1 + 1 + 6 + 2)) % 8
-        self.assertEqual(stack_mod8, 4)
-        # No instruction/ABI correction is inferred from a build passing.
+        # (7) -> C-call save (2). The repaired C-call entry is 0 mod 8.
+        stack_mod8 = (-4 * (9 + 1 + 1 + 7 + 2)) % 8
+        self.assertEqual(stack_mod8, 0)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,8 @@
 #include "Gfx.h"
 #include "ARMV30MZ/ARMV30MZ.h"
 #include "WSCart/WSCart.h"
+#include "PaletteRaster.h"
+#include "ObjTileBuffer.h"
 
 
 int packState(void *statePtr) {
@@ -27,6 +29,7 @@ int packState(void *statePtr) {
 
 void unpackState(const void *statePtr) {
 	int size = 0;
+	paletteRasterPrepareStateRestore();
 	memcpy(wsRAM, statePtr+size, sizeof(wsRAM));
 	size += sizeof(wsRAM);
 	size += sphinxLoadState(&sphinx0, statePtr+size);
@@ -34,6 +37,9 @@ void unpackState(const void *statePtr) {
 	memcpy(cartSRAM, statePtr+size, sizeof(cartSRAM));
 	size += sizeof(cartSRAM);
 	size += wsEepromLoadState(&cartEeprom, statePtr+size);
+	objTileBufferCompleteStateRestore(sphinx0.videoMode);
+	paletteRasterCompleteStateRestore(gGameHeader);
+	gfxRebuildRendererState();
 }
 
 int getStateSize() {

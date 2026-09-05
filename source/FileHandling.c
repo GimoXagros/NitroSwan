@@ -601,6 +601,7 @@ bool loadGame(const char *gameName) {
 
 			setEmuSpeed(0);
 			checkMachine();
+			paletteRasterPrepareStateRestore();
 			loadCart();
 			paletteRasterConfigure(gGameHeader);
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC

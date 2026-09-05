@@ -30,6 +30,7 @@
 	.global paletteInit
 	.global paletteTxAll
 	.global gfxRefresh
+	.global gfxRebuildRendererState
 	.global gfxEndFrame
 	.global vblIrqHandler
 	.global v30ReadPort
@@ -540,6 +541,7 @@ vblIrqHandler:
 	.type vblIrqHandler STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4-r6,lr}
+	mov r4,r0					;@ OAM paired with the completed tile descriptor.
 	bl calculateFPS
 
 	mov r6,#REG_BASE
@@ -556,6 +558,8 @@ vblIrqHandler:
 
 	add r0,r6,#REG_DMA3SAD
 	ldr r1,dmaOamBuffer			;@ DMA3 src, OAM transfer:
+	cmp r4,#0
+	movne r1,r4
 	mov r2,#OAM					;@ DMA3 dst
 	mov r3,#0x84000000			;@ 32bit incsrc incdst
 	orr r3,r3,#128*2			;@ 128 sprites * 2 longwords
@@ -665,10 +669,43 @@ gfxRefresh:					;@ Called from C when changing scaling.
 	.type gfxRefresh STT_FUNC
 ;@----------------------------------------------------------------------------
 	adr spxptr,sphinx0
+	stmfd sp!,{lr}				;@ Normalize direct C entry to nested SP mod 8.
+	bl gfxEndFrame
+	ldmfd sp!,{pc}
+;@----------------------------------------------------------------------------
+gfxRebuildRendererState:		;@ Rebuild restored host state without advancing WS time.
+	.type gfxRebuildRendererState STT_FUNC
+;@----------------------------------------------------------------------------
+	adr spxptr,sphinx0
+	stmfd sp!,{r4-r10,lr}		;@ Direct C entry remains 8-byte aligned.
+
+	ldr r0,tmpScroll
+	bl wsvCopyScrollValues
+	ldr r0,tmpWinInOut
+	bl copyWindowValues
+	ldr r0,tmpOamBuffer
+	bl wsvConvertSprites
+	bl paletteTxAll
+	ldr r0,tmpOamBuffer
+	stmfd sp!,{spxptr,lr}
+	bl videoTileBufferFrameComplete
+	bl paletteRasterFrameComplete
+	bl videoTileBufferFrameCommit
+	bl paletteRasterBeginFrame
+#ifdef WSC_VIDEO_TRACE
+	bl rendererTraceWSFrame
+#endif
+	ldmfd sp!,{spxptr,lr}
+
+	adr r0,tmpOamBuffer
+	ldmia r0,{r1-r8,lr}
+	stmia r0!,{r7,r8,lr}
+	stmia r0,{r1-r6}
+	ldmfd sp!,{r4-r10,pc}
 ;@----------------------------------------------------------------------------
 gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r8,lr}
+	stmfd sp!,{r4-r9,lr}		;@ Nested entry is 4 mod 8; seven words align C.
 
 	ldr r0,tmpScroll			;@ Destination
 	bl wsvCopyScrollValues
@@ -678,9 +715,15 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	bl wsvConvertSprites
 
 	bl paletteTxAll
+	ldr r0,tmpOamBuffer			;@ Pair this completed OAM with its tile bank.
 	stmfd sp!,{spxptr,lr}			;@ C may clobber r12/spxptr.
 	bl videoTileBufferFrameComplete
 	bl paletteRasterFrameComplete
+	bl videoTileBufferFrameCommit
+	bl paletteRasterBeginFrame
+#ifdef WSC_VIDEO_TRACE
+	bl rendererTraceWSFrame
+#endif
 	ldmfd sp!,{spxptr,lr}
 ;@--------------------------
 
@@ -702,7 +745,7 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	add r1,r1,#1
 	str r1,frameTotal
 
-	ldmfd sp!,{r4-r8,lr}
+	ldmfd sp!,{r4-r9,lr}
 	bx lr
 
 ;@----------------------------------------------------------------------------

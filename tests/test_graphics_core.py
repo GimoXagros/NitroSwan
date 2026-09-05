@@ -60,8 +60,8 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("cmp r0,#0x0FE00000", hook)
         self.assertIn("bxcc lr", hook)
         self.assertIn("ldr r2,=wsvVideoWriteCallbackEnabled", hook)
-        self.assertIn("stmfd sp!,{r0,r1,lr}", hook)
-        self.assertIn("ldmfd sp!,{r0,r1,pc}", hook)
+        self.assertIn("stmfd sp!,{r0-r2,lr}", hook)
+        self.assertIn("ldmfd sp!,{r0-r2,pc}", hook)
         self.assertEqual(hook.count("bl paletteRasterCapturePaletteWrite"), 1)
 
     def test_write_time_delta_model_coalesces_and_maps_to_next_line(self):
@@ -174,8 +174,8 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("SetYtrigger(DS_GAME_TOP + active->delta[0].line);", raster)
         self.assertIn("BG_PALETTE[index] = active->base[index];", raster)
         vblank = main[main.index("void myVblank(void)") : main.index("int main(")]
-        self.assertLess(vblank.index("videoTileBufferVBlank();"), vblank.index("vblIrqHandler();"))
-        self.assertLess(vblank.index("vblIrqHandler();"), vblank.index("paletteRasterVBlank();"))
+        self.assertLess(vblank.index("videoTileBufferVBlank();"), vblank.index("vblIrqHandler(completedOam);"))
+        self.assertLess(vblank.index("vblIrqHandler(completedOam);"), vblank.index("paletteRasterVBlank();"))
 
     def test_palette_and_obj_buffers_keep_the_release_contracts(self):
         gfx = (ROOT / "source" / "Gfx.s").read_text(encoding="utf-8")
@@ -188,13 +188,13 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("(format & 0xC0) == 0xC0", obj)
         self.assertIn("OBJ_BANK_BYTES", obj)
         self.assertIn("wsvObjTileSnapshots[OBJ_BANK_BYTES * 2]", obj)
-        self.assertIn("wsvObjReadyTileOffset = wsvObjTileOffset", obj)
+        self.assertIn("wsvObjReadyTileOffset = slot->descriptor.objTileOffset", obj)
         self.assertIn("memcpy((void *)SPRITE_GFX, source, OBJ_BANK_BYTES)", obj)
         self.assertIn("BG_BANK_BYTES 0x8000", obj)
         self.assertIn("wsvBgTileOffset", obj)
         self.assertIn("wsvBgReadyTileOffset", obj)
-        self.assertIn("wsvBgReadyTileOffset = wsvBgTileOffset", obj)
-        vblank_switch = obj[obj.index("void videoTileBufferVBlank") :]
+        self.assertIn("wsvBgReadyTileOffset = slot->descriptor.bgTileOffset", obj)
+        vblank_switch = obj[obj.index("const void *videoTileBufferVBlank") :]
         self.assertIn("wsvBgReadyTileOffset", vblank_switch)
         self.assertNotIn("wsvBgTileOffset >>", vblank_switch)
         self.assertIn("otherwise unused main BG VRAM", obj)

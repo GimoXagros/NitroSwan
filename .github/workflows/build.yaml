@@ -39,27 +39,36 @@ jobs:
         run: python3 tools/run_core_regressions.py
 
       - name: Build DS version
-        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r7
+        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r8
 
       - name: Build DSi/DSpico version
         run: |
-          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
+          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r8 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
+
+      - name: Validate linked renderer ABI
+        run: |
+          python3 tools/validate_renderer_abi.py \
+            --build-dir build/NitroSwan-DS-0.7.7-custom.r8 \
+            --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
+          python3 tools/validate_renderer_abi.py \
+            --build-dir build/NitroSwan-DSi-0.7.7-custom.r8 \
+            --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
 
       - name: Validate executable headers and embedded banners
         run: |
-          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r7.nds \
-            --dsi NitroSwan-DSi-0.7.7-custom.r7.nds
+          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r8.nds \
+            --dsi NitroSwan-DSi-0.7.7-custom.r8.nds
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: NitroSwan-0.7.7-custom.r7
+          name: NitroSwan-0.7.7-custom.r8
           path: |
             History.txt
-            NitroSwan-DS-0.7.7-custom.r7.nds
-            NitroSwan-DSi-0.7.7-custom.r7.nds
+            NitroSwan-DS-0.7.7-custom.r8.nds
+            NitroSwan-DSi-0.7.7-custom.r8.nds
             README.md
             WonderWitch.md
             NitroSwan_todo.txt
-            Docs/ReleaseValidation-r7.md
+            Docs/ReleaseValidation-r8.md

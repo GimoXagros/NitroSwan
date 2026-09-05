@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r7
+# NitroSwan V0.7.7-custom.r8
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -10,10 +10,31 @@ core.
 
 > **Known limitation / 알려진 문제:** One Piece와 Digimon Battle Spirit 계열의
 > 캐릭터 깨짐은 초기 상태보다 크게 개선됐지만, DSpico 실기에서 일부 모션의
-> 잔여 깨짐이 확인되었습니다. r7은 완전 해결판이 아닙니다. 사용자가 이 제한을
-> 확인하고 배포를 승인했으며, 완전 해결은 다음 최우선 작업입니다.
+> 잔여 깨짐이 확인되었습니다. r8은 renderer 안전성과 완료 프레임 일관성을
+> 보강하지만 새 실기 장면 검증을 거친 완전 해결판은 아닙니다.
 > Backgrounds were reported correct against Oswan; the Rockman & Forte background
 > issue was also reported resolved. Some character-motion corruption remains.
+
+## 0.7.7-custom.r8 렌더러 안전성 개선
+
+- ARM assembly에서 C callback으로 진입하는 palette, video-register,
+  frame-complete, restore 및 VBlank 경로의 8-byte stack alignment와 register
+  보존 규약을 정리했습니다. DS/DSi 링크 오브젝트 검사와 선택적 실기용 ABI
+  sentinel을 함께 제공합니다.
+- reset, ROM 교체 및 save-state restore 전에 renderer publication을 중지하고,
+  복원된 WS 상태에서 palette, BG/OBJ tile, OAM을 다시 만든 뒤 완성된 세대만
+  다음 host VBlank에 게시합니다.
+- 하나의 completed WS frame에 속한 OAM, OBJ tile generation, OBJ palette,
+  BG bank 및 palette-raster slot을 같은 triple-buffered descriptor로 게시합니다.
+  16KB OBJ 복사는 dirty generation에서만 수행하는 기존 최적화를 유지합니다.
+- seed와 host-VBlank publication 전송량을 분리해 계측하며, 진단 trace는
+  compile-time 옵션으로만 포함되어 일반 배포 빌드에는 실행 비용이 없습니다.
+- 76개 Python 회귀 검사, 실제 host C RTC/cache 검사, DS/DSi 빌드, 양쪽의
+  ARM ABI 오브젝트 검사 및 NDS header/banner 검증을 CI에서 통과했습니다.
+
+검증 범위와 남은 제한은 [r8 검증 기록](Docs/ReleaseValidation-r8.md)을
+참고하십시오. 실기 근거 없이 sprite line timing, DMA3, EMUPALBUFF 크기,
+게임별 whitelist 또는 배경 raster 동작은 변경하지 않았습니다.
 
 ## 0.7.7-custom.r7 영상 개선
 
@@ -32,7 +53,7 @@ core.
 - 내부 `WSC-VideoCore-r8-test`의 렌더러를 배포합니다. 테스트 번호 r8과 정식
   버전 `v0.7.7-custom.r7`은 별개입니다.
 
-검증 범위와 남은 제한은 [r7 검증 기록](Docs/ReleaseValidation-r7.md),
+이전 r7의 검증 범위는 [r7 검증 기록](Docs/ReleaseValidation-r7.md),
 다음 우선순위·난이도는 [TODO](NitroSwan_todo.txt)를 참고하십시오.
 개발 절차·검증 수준·비공개 테스트 자료 정책은
 [개발 가이드](Docs/DevelopmentGuide.md), 2026-09-03 정비 결과는
@@ -73,9 +94,9 @@ CI의 소스/모델 검사와 빌드 성공은 DSpico 실기 또는 native Wonde
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r7.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r8.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r7.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r8.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -200,13 +221,13 @@ BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r7
+make NAME=NitroSwan-DS-0.7.7-custom.r8
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r8 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
@@ -220,7 +241,7 @@ Korean-patched ROM on DSpico hardware; graphics, speed, sound and input remained
 normal. Mahjong Touryuumon's speed, sound and input were also verified on DSpico
 hardware.
 
-The current r7 generic renderer is improved, but residual One Piece/Digimon
+The r8 renderer retains the r7 visual improvements, but residual One Piece/Digimon
 character-motion corruption remains open. Keep commercial ROMs, external BIOS
 dumps and saves local-only in `.local-test-assets/`; never attach them to PRs,
 Actions artifacts or releases. Existing fonts and replacement IPL assets are

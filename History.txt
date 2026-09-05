@@ -1,6 +1,31 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r8 - 2026-09-05 (GimoXagros custom build)
+	Aligned the reviewed ARM-to-C renderer callback paths to the AAPCS 8-byte
+	stack rule, including byte/word palette writes, video-register writes,
+	frame completion, restore rebuild and host VBlank. Added linked-object checks
+	for seven assembly symbols and ten direct/nested call paths in both DS builds.
+	Added an optional on-device ABI sentinel that checks stack recovery and
+	callee-saved registers without adding code to normal release builds.
+	Coordinated renderer shutdown, restore/reset, rebuild and publication so stale
+	pre-restore frames cannot be selected after reset, ROM replacement or state load.
+	Grouped OAM, decoded OBJ tiles, OBJ palette, completed-frame metadata, BG bank
+	and palette-raster ownership in a bounded triple-buffered completed-frame slot.
+	Only the short metadata handoff disables interrupts; large copies remain outside.
+	Kept 16KB OBJ seeding and host publication conditional on dirty generations,
+	and separated WS-frame seed bytes from host-VBlank publication metrics.
+	Added compile-time generation tracing and an analyzer for mixed completed-frame
+	ownership. Trace and ABI diagnostics remain disabled in normal release builds.
+	Passed 76 Python regressions, host C RTC/cache vectors, repository/localization
+	checks, DS/DSi builds, linked ARM ABI inspection, and NDS header/banner checks.
+	No fresh melonDS scene matrix, DSpico gameplay run, or native WonderSwan timing
+	measurement was performed for r8. Residual One Piece/Digimon character-motion
+	corruption remains open; this release does not claim a full visual fix.
+	Preserved the r7 BG raster, line-142/144 timing, 1KB EMUPALBUFF, DMA3 window
+	ownership and game-independent correctness path. See
+	Docs/ReleaseValidation-r8.md for the exact evidence and remaining gates.
+
 V0.7.7-custom.r7 - 2026-09-02 (GimoXagros custom build)
 	Released the renderer from internal WSC-VideoCore-r8-test with the user's
 	explicit approval despite residual character-motion corruption on DSpico.

@@ -29,6 +29,7 @@ typedef struct {
 
 static PaletteDeltaFrame frames[PALETTE_FRAME_COUNT];
 static volatile int captureFrame;
+static volatile int pendingFrame = -1;
 static volatile int readyFrame = -1;
 static volatile int activeFrame = -1;
 static volatile u16 replayCursor;
@@ -42,6 +43,12 @@ volatile u16 paletteRasterVCountIrqsFrame;
 volatile u16 paletteRasterVCountIrqsMaximum;
 static u16 previousPalette[WS_BG_COLORS];
 static u16 previousBackdrop;
+#ifdef WSC_VIDEO_TRACE
+static u16 traceLastVCountIrqs;
+#endif
+
+static void snapshotBase(PaletteDeltaFrame *frame);
+static void resetCaptureFrame(PaletteDeltaFrame *frame);
 
 static inline u16 mapColor(u16 rawColor) {
 	return MAPPED_RGB[rawColor & 0x0FFF];
@@ -57,6 +64,43 @@ static inline u16 backdropRawColor(const u16 *palette) {
 static void stopReplayIrq(void) {
 	irqDisable(IRQ_VCOUNT);
 	REG_DISPSTAT &= ~DISP_YTRIGGER_IRQ;
+}
+
+static void quiesceRaster(void) {
+	const int oldIme = enterCriticalSection();
+	wsvVideoWriteCallbackEnabled = false;
+	rasterEnabled = false;
+	readyFrame = -1;
+	pendingFrame = -1;
+	activeFrame = -1;
+	replayCursor = 0;
+	leaveCriticalSection(oldIme);
+	stopReplayIrq();
+}
+
+static void resumeRaster(const WsHeader *header, bool resetMetrics) {
+	const bool colorHardware = header != NULL && gSOC != SOC_ASWAN;
+	readyFrame = -1;
+	pendingFrame = -1;
+	activeFrame = -1;
+	captureFrame = 0;
+	replayCursor = 0;
+	if (resetMetrics) {
+		paletteRasterEventsFrame = 0;
+		paletteRasterEventsMaximum = 0;
+		paletteRasterDroppedFrame = 0;
+		paletteRasterDroppedMaximum = 0;
+		paletteRasterVCountIrqsFrame = 0;
+		paletteRasterVCountIrqsMaximum = 0;
+	}
+	if (colorHardware) {
+		resetCaptureFrame(&frames[0]);
+		snapshotBase(&frames[0]);
+	}
+	const int oldIme = enterCriticalSection();
+	rasterEnabled = colorHardware;
+	wsvVideoWriteCallbackEnabled = colorHardware;
+	leaveCriticalSection(oldIme);
 }
 
 static void snapshotBase(PaletteDeltaFrame *frame) {
@@ -126,27 +170,18 @@ static int nextFreeFrame(int active, int ready) {
 }
 
 void paletteRasterConfigure(const WsHeader *header) {
-	const bool colorHardware = header != NULL && gSOC != SOC_ASWAN;
-	rasterEnabled = colorHardware;
-	wsvVideoWriteCallbackEnabled = colorHardware;
-	readyFrame = -1;
-	activeFrame = -1;
-	captureFrame = 0;
-	replayCursor = 0;
-	paletteRasterEventsFrame = 0;
-	paletteRasterEventsMaximum = 0;
-	paletteRasterDroppedFrame = 0;
-	paletteRasterDroppedMaximum = 0;
-	paletteRasterVCountIrqsFrame = 0;
-	paletteRasterVCountIrqsMaximum = 0;
+	quiesceRaster();
 	objTileBufferReset();
-#if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
-	stopReplayIrq();
-#endif
-	if (colorHardware) {
-		resetCaptureFrame(&frames[0]);
-		snapshotBase(&frames[0]);
-	}
+	resumeRaster(header, true);
+}
+
+void paletteRasterPrepareStateRestore(void) {
+	quiesceRaster();
+	objTileBufferReset();
+}
+
+void paletteRasterCompleteStateRestore(const WsHeader *header) {
+	resumeRaster(header, false);
 }
 
 void paletteRasterCapturePaletteWrite(unsigned int address) {
@@ -192,17 +227,29 @@ void paletteRasterFrameComplete(void) {
 	if (finished->dropped > paletteRasterDroppedMaximum) {
 		paletteRasterDroppedMaximum = finished->dropped;
 	}
-	readyFrame = finishedFrame;
-	// VBlank may consume readyFrame and replace it with -1 before the next
-	// statement. Always exclude the published frame, even if it is now active.
-	// activeFrame can be either the old active frame or finishedFrame; excluding
-	// it AND finishedFrame is safe in both cases without masking host interrupts.
-	captureFrame = nextFreeFrame(activeFrame, finishedFrame);
+	pendingFrame = finishedFrame;
+}
+
+void paletteRasterCommitFrame(void) {
+	if (pendingFrame >= 0) {
+		readyFrame = pendingFrame;
+		pendingFrame = -1;
+		captureFrame = nextFreeFrame(activeFrame, readyFrame);
+	}
+}
+
+void paletteRasterBeginFrame(void) {
+	if (!rasterEnabled) {
+		return;
+	}
 	resetCaptureFrame(&frames[captureFrame]);
 	snapshotBase(&frames[captureFrame]);
 }
 
 void paletteRasterVBlank(void) {
+#ifdef WSC_VIDEO_TRACE
+	traceLastVCountIrqs = paletteRasterVCountIrqsFrame;
+#endif
 	if (paletteRasterVCountIrqsFrame > paletteRasterVCountIrqsMaximum) {
 		paletteRasterVCountIrqsMaximum = paletteRasterVCountIrqsFrame;
 	}
@@ -265,3 +312,19 @@ void paletteRasterVCountIrq(void) {
 	}
 #endif
 }
+
+#ifdef WSC_VIDEO_TRACE
+void paletteRasterGetTraceState(PaletteRasterTraceState *state) {
+	*state = (PaletteRasterTraceState){
+		.captureFrame = captureFrame,
+		.pendingFrame = pendingFrame,
+		.readyFrame = readyFrame,
+		.activeFrame = activeFrame,
+		.lastVCountIrqs = traceLastVCountIrqs,
+		.readyEvents = readyFrame >= 0 ? frames[readyFrame].count : 0,
+		.readyDrops = readyFrame >= 0 ? frames[readyFrame].dropped : 0,
+		.activeEvents = activeFrame >= 0 ? frames[activeFrame].count : 0,
+		.activeDrops = activeFrame >= 0 ? frames[activeFrame].dropped : 0,
+	};
+}
+#endif

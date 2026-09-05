@@ -332,8 +332,10 @@ The #59 branch, its minimal Sphinx pointer and its ancestry are preserved;
 only its ordinary follow-up head advances. No merge/rebase/reset/squash/force
 push, new feature, OBJ/timing experiment, main/release/tag change or submodule
 pointer change occurred. Test bytecode/build artifacts remain local and are not
-staged. The current r7 release does NOT contain these unmerged safety changes.
-Readiness remains **NOT READY** for A2-A4, despite successful maintenance CI.
+staged. At the time of this audit, r7 did NOT contain the unmerged safety
+changes. Their later implementation and r8 packaging are recorded in
+RendererSafety-r7.md and ReleaseValidation-r8.md. Audit-time readiness remained
+**NOT READY** for A2-A4 despite successful maintenance CI.
 
 ## Next work recommendation
 

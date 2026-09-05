@@ -1,38 +1,42 @@
-NitroSwan Todo — current release v0.7.7-custom.r7
-Maintenance snapshot: 2026-09-03. See Docs/BaselineAudit-r7.md for audit blockers.
-This is not a new release; History.txt remains the historical release record.
+NitroSwan Todo — current release v0.7.7-custom.r8
+Release snapshot: 2026-09-05. The r7 baseline audit is in
+Docs/BaselineAudit-r7.md; the shipped A2-A4 safety work is documented in
+Docs/RendererSafety-r7.md and Docs/ReleaseValidation-r8.md. ARM runtime,
+fresh melonDS scene and DSpico validation remain pending, so r8 is not a claim
+that the residual character-motion defect is completely fixed.
 
 1. Current release status
-   * r7 publishes the generic WSC-VideoCore-r8-test renderer (the internal test
-     number is not a public r8 release).
+   * r8 retains the generic r7 video behavior and adds renderer ABI, lifecycle
+     and completed-frame publication safety. Diagnostic trace/self-test code is
+     compile-time disabled in the normal release binaries.
    * DSpico-tested by the user: substantially improved character motion, but
-     still open in current r7. No full OBJ-correctness claim.
+     still open in current r8. No full OBJ-correctness claim.
    * User Oswan comparison: BGs correct; Rockman & Forte BG issue reported
      resolved during r7 testing. Preserve those scenes as regression controls.
    * CI/source-model checks/builds are not DSpico or native WonderSwan tests.
-   * Maintenance audit: palette handoff interleaving fixed independently;
-     renderer ABI and reset/ownership safety gaps still need closure before
-     this can be called a fully safe next-feature baseline.
+   * The r8 release aligns the reviewed ARM/C callback paths,
+     coordinates restore/reset and atomically publishes completed OBJ/OAM/BG/
+     palette ownership. It passed automated CI/build validation but has not had
+     a fresh DSpico gameplay certification.
 
 2. Highest-priority open defect
    P0 / Very high: remaining character-motion corruption in One Piece original
    and patched variants, Digimon Battle Spirit 1.0 / 1.5 / Frontier.
    "Fixed in r6 title-specific path" is historical validation; "improved in r7
-   generic renderer" and "still open in current r7" describe the present.
+   generic renderer" and "still open in current r8" describe the present.
    No new attempt to solve this defect is part of the baseline maintenance.
 
 3. Next work order (difficulty estimates, not delivery promises)
-   0. Safety prerequisite / High: close the audit's C/ARM stack alignment,
-      state-load/reset and coherent publication gaps with executable tests.
-      Keep all active upstream PR branches and r7 reference assets intact.
+   0. Safety prerequisite / High: execute the prepared ARM ABI sentinel and
+      reset/save/load smoke, then complete fresh melonDS and DSpico scene tests
+      for the shipped A2-A4 changes. Keep active PR branches and prior assets intact.
    1. P0 / Very high: capture OAM, decoded OBJ, sprite latch, palette and host
       VBlank generations together in the reproducible character-motion scenes.
       First prove or reject the suspected ownership cause; do not change the
       working BG path, sprite timing or copy count on a source-model guess.
-   2. P1 / Medium: repeatable paired scene tests and separate WS-frame seed /
-      host-VBlank publication copy metrics. objBytesCopiedFrame is SEED ONLY,
-      not total bandwidth; count actual publications and define boundaries.
-      Record palette drops, frame pacing, sound, input and saves.
+   2. P1 / Medium: collect paired generation traces with `objSeedBytesFrame`,
+      `objPublishBytesHostFrame`, `objTotalBytes`, publication/clean-generation
+      counts, palette drops, frame pacing, sound, input and saves.
    3. P1 / High: BG raster validation in Anode/Cathode battles, Final Lap
       2000/Special roads and Hataraku Chocobo transitions. Reproduce before
       fixing. Keep NitroSwan #59 / Sphinx #4 minimal and BG-only.
@@ -58,10 +62,11 @@ This is not a new release; History.txt remains the historical release record.
    * Fresh emulator and DSpico scene/performance checks for maintenance changes
      are pending; historical r6/r7 runs must not be relabelled as fresh passes.
    * Native WonderSwan prefetch/scanline vectors pending; DSpico is not native WS.
-   * Mode transitions: mono/color, 2bpp/4bpp, packed/planar, LCD, BIOS,
-     reset/eject/replacement and save-state restore need interrupt-aware checks.
-   * Palette event overflow, generation wrap and WS/host frame metric boundaries
-     need explicit stress coverage; no new timing/renderer flag in this task.
+   * Mode transitions and generation wrap have automated lifecycle models, but
+     mono/color, packed/planar, LCD, BIOS, reset/replacement and save-state
+     restore still need interrupt-aware emulator/hardware execution.
+   * The candidate separates WS seed and host publication clocks; real-scene
+     transfer traces and palette overflow behavior still need collection.
    * Clean builds verify assembly/link/package, not game compatibility.
 
 5. Known game issues and retained regression controls
@@ -81,7 +86,7 @@ This is not a new release; History.txt remains the historical release record.
    CONTROLS / LIMITED POSITIVE RESULTS:
    * Rockman & Forte BG: user-reported resolved during r7; not whole-game certified.
    * One Piece sky: original and patched title-specific r6 path emulator-tested
-     and DSpico-tested; current r7 generic BG comparison reported correct.
+     and DSpico-tested; the generic BG path retained in r8 was reported correct.
      This is distinct from the OPEN character-motion issue.
    * Mahjong Touryuumon: custom.r5+ speed/sound/input DSpico-tested; native
      instruction prefetch timing still pending.
@@ -90,7 +95,8 @@ This is not a new release; History.txt remains the historical release record.
    * Beatmania: memory-capacity limitation, not a new regression here.
 
 6. Historical completed work / reference notes
-   * See History.txt and Docs/ReleaseValidation-r7.md for released changes.
+   * See History.txt and Docs/ReleaseValidation-r8.md for current released changes;
+     Docs/ReleaseValidation-r7.md remains the historical r7 record.
    * Through r6: mono RAM bounds, RTC calendar, NitroSwan-local DSpico ROM cache,
      filename/load stability, multilingual UI/fonts, cheats, settings directory,
      NVRAM autosave and direct Pico Loader launch handling.

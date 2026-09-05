@@ -265,9 +265,9 @@ bootRomSwitchW:
 cpuWriteWordUnaligned:	;@ Make sure cpuWriteMem20 does not change r0 or r1!
 ;@----------------------------------------------------------------------------
 	eatCycles 1
-	stmfd sp!,{lr}
+	stmfd sp!,{r2,lr}			;@ Keep the nested byte-write entry 8-byte aligned.
 	bl cpuWriteMem20
-	ldmfd sp!,{lr}
+	ldmfd sp!,{r2,lr}
 	add r0,r0,#0x1000
 	mov r1,r1,lsr#8
 	b cpuWriteMem20
@@ -375,10 +375,10 @@ paletteRamWriteNotify:		;@ r0/r1 must be preserved for cpuWriteMem20 callers.
 	ldrb r2,[r2]
 	cmp r2,#0
 	bxeq lr
-	stmfd sp!,{r0,r1,lr}
+	stmfd sp!,{r0-r2,lr}		;@ Preserve alignment and the write contract.
 	mov r0,r0,lsr#12
 	bl paletteRasterCapturePaletteWrite
-	ldmfd sp!,{r0,r1,pc}
+	ldmfd sp!,{r0-r2,pc}
 ;@----------------------------------------------------------------------------
 cart_WW:
 ;@----------------------------------------------------------------------------

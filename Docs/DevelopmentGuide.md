@@ -2,8 +2,9 @@
 
 This guide describes development procedure, not a hardware certification.
 Read the dated [audit snapshot](BaselineAudit-r7.md) before starting: outstanding
-safety findings must be closed before unrelated accuracy features. The release
-is still `v0.7.7-custom.r7`; no maintenance release or tag is created here.
+safety findings must be closed before unrelated accuracy features. The current
+release is `v0.7.7-custom.r8`; its remaining runtime gates are recorded in
+[ReleaseValidation-r8.md](ReleaseValidation-r8.md).
 
 ## Repositories, branches and dependencies
 
@@ -62,11 +63,11 @@ python3 -m compileall -q tools tests
 python3 tools/validate_repository.py
 python3 tools/validate_localization.py
 python3 tools/run_core_regressions.py
-make -j2 NAME=NitroSwan-DS-0.7.7-custom.r7
-make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
+make -j2 NAME=NitroSwan-DS-0.7.7-custom.r8
+make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r8 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
-python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r7.nds \
-  --dsi NitroSwan-DSi-0.7.7-custom.r7.nds
+python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r8.nds \
+  --dsi NitroSwan-DSi-0.7.7-custom.r8.nds
 ```
 
 `HOST_CC` selects a host executable path/name, not shell flags or a command
@@ -88,7 +89,7 @@ Use a new directory, not cleanup commands on a working tree with private files:
 ```sh
 git clone --no-checkout https://github.com/GimoXagros/NitroSwan.git NitroSwan-clean
 cd NitroSwan-clean
-git checkout --detach v0.7.7-custom.r7
+git checkout --detach v0.7.7-custom.r8
 git submodule sync --recursive
 git submodule update --init --recursive
 ```

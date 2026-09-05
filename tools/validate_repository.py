@@ -7,11 +7,11 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-CURRENT_VERSION = "0.7.7-custom.r7"
+CURRENT_VERSION = "0.7.7-custom.r8"
 REQUIRED_DOCS = (
     "README.md", "History.txt", "NitroSwan_todo.txt",
     "Docs/DevelopmentGuide.md", "Docs/BaselineAudit-r7.md",
-    "Docs/ReleaseValidation-r7.md", "Docs/GameCompatibilityIdentity.md",
+    "Docs/ReleaseValidation-r8.md", "Docs/GameCompatibilityIdentity.md",
     "Docs/ROMFetchWaitstate.md",
 )
 PRIVATE_SUFFIXES = {

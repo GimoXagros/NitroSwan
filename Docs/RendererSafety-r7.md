@@ -1,10 +1,10 @@
 # r7 renderer safety and completed-frame coherency candidate
 
-Status date: 2026-09-05. This is a development candidate based on fork `main`
-`0a895e86829e8044d7fccfa51ad4e67ee5194c2d`. It does not move the
-`v0.7.7-custom.r7` tag, change the displayed version, merge a PR, or publish a
-release. The r7 release reference remains
-`06178156341d70fd876174272d04f5cb5d440a2b`.
+Status date: 2026-09-05. This work began as a development candidate based on
+fork `main` `0a895e86829e8044d7fccfa51ad4e67ee5194c2d`. The user subsequently
+authorized packaging it as `v0.7.7-custom.r8`; the historical r7 tag remains
+unchanged at `06178156341d70fd876174272d04f5cb5d440a2b`. Runtime limitations
+remain as recorded below and in `ReleaseValidation-r8.md`.
 
 ## Repository and build identity
 

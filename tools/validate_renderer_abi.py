@@ -91,8 +91,12 @@ def main() -> int:
         "new-frame": (9, 1, 2),
         "palette-byte-write": (9, 1, 4),
         "palette-unaligned-word-write": (9, 1, 2, 4),
-        "video-register-write": (9, 1, 4, 6),
+        "video-byte-register-write": (9, 1, 6),
+        "video-word-register-write": (9, 1, 4, 6),
+        "direct-video-word-register-write": (4, 6),
+        "direct-gfx-refresh": (1, 7, 2),
         "restore-rebuild": (8, 2),
+        "host-vblank": (4,),
     }
     for name, pushes in paths.items():
         mod8 = (-4 * sum(pushes)) % 8

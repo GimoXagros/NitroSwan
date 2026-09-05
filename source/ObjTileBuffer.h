@@ -26,7 +26,7 @@ extern volatile u16 objTilesConvertedMaximum;
 extern volatile u32 objSeedBytesFrame;
 extern volatile u32 objPublishBytesHostFrame;
 extern volatile u64 objTotalBytes;
-extern volatile u32 objBytesCopiedMaximum;
+extern volatile u32 objSeedBytesMaximum;
 extern volatile u32 objBufferSwapCount;
 extern volatile u32 objPublicationCount;
 extern volatile u32 skippedCleanGenerationCount;

@@ -44,7 +44,7 @@ volatile u16 objTilesConvertedMaximum;
 volatile u32 objSeedBytesFrame;
 volatile u32 objPublishBytesHostFrame;
 volatile u64 objTotalBytes;
-volatile u32 objBytesCopiedMaximum;
+volatile u32 objSeedBytesMaximum;
 volatile u32 objBufferSwapCount;
 volatile u32 objPublicationCount;
 volatile u32 skippedCleanGenerationCount;
@@ -152,7 +152,7 @@ void objTileBufferReset(void) {
 	objSeedBytesFrame = 0;
 	objPublishBytesHostFrame = 0;
 	objTotalBytes = 0;
-	objBytesCopiedMaximum = 0;
+	objSeedBytesMaximum = 0;
 	objBufferSwapCount = 0;
 	objPublicationCount = 0;
 	skippedCleanGenerationCount = 0;
@@ -234,8 +234,8 @@ void objTileBufferBeginFrame(unsigned int videoMode) {
 	seedObjBank(sourceOffset, destinationOffset);
 	objSeedBytesFrame = OBJ_BANK_BYTES;
 	addObjTransferBytes(OBJ_BANK_BYTES);
-	if (objSeedBytesFrame > objBytesCopiedMaximum) {
-		objBytesCopiedMaximum = objSeedBytesFrame;
+	if (objSeedBytesFrame > objSeedBytesMaximum) {
+		objSeedBytesMaximum = objSeedBytesFrame;
 	}
 
 	wsvObjTileOffset = destinationOffset;

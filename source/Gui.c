@@ -318,6 +318,7 @@ void ejectGame() {
 
 void resetGame() {
 	checkMachine();
+	paletteRasterPrepareStateRestore();
 	loadCart();
 	paletteRasterConfigure(gGameHeader);
 	setupEmuBackground();

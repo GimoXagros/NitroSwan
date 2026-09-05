@@ -18,9 +18,13 @@ extern "C" {
 #endif
 
 void paletteRasterConfigure(const WsHeader *header);
+void paletteRasterPrepareStateRestore(void);
+void paletteRasterCompleteStateRestore(const WsHeader *header);
 void paletteRasterCapturePaletteWrite(unsigned int address);
 void wsvVideoRegisterWriteCallback(unsigned int port);
 void paletteRasterFrameComplete(void);
+void paletteRasterCommitFrame(void);
+void paletteRasterBeginFrame(void);
 void paletteRasterVBlank(void);
 void paletteRasterVCountIrq(void);
 
@@ -31,6 +35,22 @@ extern volatile u16 paletteRasterDroppedFrame;
 extern volatile u16 paletteRasterDroppedMaximum;
 extern volatile u16 paletteRasterVCountIrqsFrame;
 extern volatile u16 paletteRasterVCountIrqsMaximum;
+
+#ifdef WSC_VIDEO_TRACE
+typedef struct {
+	s16 captureFrame;
+	s16 pendingFrame;
+	s16 readyFrame;
+	s16 activeFrame;
+	u16 lastVCountIrqs;
+	u16 readyEvents;
+	u16 readyDrops;
+	u16 activeEvents;
+	u16 activeDrops;
+} PaletteRasterTraceState;
+
+void paletteRasterGetTraceState(PaletteRasterTraceState *state);
+#endif
 
 #ifdef __cplusplus
 }

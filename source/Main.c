@@ -20,6 +20,12 @@
 #include "Cheats.h"
 #include "PaletteRaster.h"
 #include "ObjTileBuffer.h"
+#ifdef WSC_VIDEO_TRACE
+#include "RendererTrace.h"
+#endif
+#ifdef RENDERER_ABI_SELF_TEST
+#include "RendererAbiSelfTest.h"
+#endif
 
 static void checkTimeOut(void);
 static void setupGraphics(void);
@@ -56,11 +62,16 @@ void myVblank(void) {
 //---------------------------------------------------------------------------------
 	vBlankOverflow = true;
 //	DC_FlushRange(EMUPALBUFF, 0x400);
-	videoTileBufferVBlank();
-	vblIrqHandler();
+	if (!videoTileBufferIsQuiesced()) {
+		const void *completedOam = videoTileBufferVBlank();
+		vblIrqHandler(completedOam);
 #if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
-	paletteRasterVBlank();
+		paletteRasterVBlank();
 #endif
+#ifdef WSC_VIDEO_TRACE
+		rendererTraceHostVBlank();
+#endif
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -93,9 +104,25 @@ int main(int argc, char **argv) {
 	irqDisable(IRQ_VCOUNT);
 #endif
 	setupGUI();
+#ifdef RENDERER_ABI_SELF_TEST
+	rendererAbiSelfTestResult = rendererAbiSentinelSelfTest();
+	if (rendererAbiSelfTestResult != 0) {
+		char abiFailure[48];
+		snprintf(abiFailure, sizeof(abiFailure),
+			"Renderer ABI self-test failed: %08lx",
+			(unsigned long)rendererAbiSelfTestResult);
+		infoOutput(abiFailure);
+		while (1) {
+			swiWaitForVBlank();
+		}
+	}
+#endif
 	getInput();
 	initSettings();
 	bool fsOk = initFileHelper();
+#ifdef WSC_VIDEO_TRACE
+	rendererTraceInit(fsOk);
+#endif
 	char launchGamePath[FILENAME_MAX_LENGTH];
 	const char *launchGame = NULL;
 	if (fsOk && argc > 1) {
@@ -128,6 +155,9 @@ int main(int argc, char **argv) {
 	while (1) {
 		waitVBlank();
 		guiRunLoop();
+#ifdef WSC_VIDEO_TRACE
+		rendererTraceFlush();
+#endif
 		if (!pauseEmulation) {
 			if (powerIsOn) {
 				run();

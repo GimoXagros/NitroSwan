@@ -27,7 +27,7 @@ extern u16 GFX_BG0CNT;
 extern u16 GFX_BG1CNT;
 
 void gfxInit(void);
-void vblIrqHandler(void);
+void vblIrqHandler(const void *completedOam);
 
 /**
  * Calculate new (color) palette look up table.
@@ -49,6 +49,7 @@ void paletteTxAll(void);
 void shutDownLCD(void);
 void updateLCDRefresh(void);
 void gfxRefresh(void);
+void gfxRebuildRendererState(void);
 u8 v30ReadPort(u16 port);
 u16 v30ReadPort16(u16 port);
 void v30WritePort(u8 value, u16 port);

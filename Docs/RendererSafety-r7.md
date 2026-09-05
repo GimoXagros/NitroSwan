@@ -139,7 +139,7 @@ melonDS cache lab is not a general NitroSwan renderer oracle. Consequently:
 
 | Check | Result |
 | --- | --- |
-| Python regressions | PASS, 75 tests |
+| Python regressions | PASS, 76 tests |
 | repository/localization | PASS; 128 translations, 20615 non-ASCII glyphs |
 | host C RTC/cache execution | SKIP locally; PASS in CI |
 | DS and DSi/DSpico build | PASS |
@@ -161,11 +161,12 @@ Full builds retained the four known warnings in both profiles: unused
 `checkTimeOut`, two volatile cartridge-probe temporaries set but not used, and
 the old-style `crc32` definition. No new warning was observed.
 
-Fork CI [run 33940872072](https://github.com/GimoXagros/NitroSwan/actions/runs/33940872072)
-completed successfully at candidate `673ce7a`: repository/localization checks,
-75 Python tests, actual host C RTC and DSpico-cache vectors, DS/DSi builds,
-NDS validation and artifact archival all passed. CI reported the same four
-known warnings in each build profile.
+Fork CI [run 33941255575](https://github.com/GimoXagros/NitroSwan/actions/runs/33941255575)
+completed successfully at candidate `bb85d20`: repository/localization checks,
+76 Python tests, actual host C RTC and DSpico-cache vectors, DS/DSi builds,
+linked-object ABI validation (7 symbols and 10 paths in both profiles), NDS
+validation and artifact archival all passed. CI reported the same four known
+warnings in each build profile.
 
 ## Gate decision and remaining blockers
 

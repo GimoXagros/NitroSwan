@@ -73,6 +73,14 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(trust_lines, [
             'git config --global --add safe.directory "$GITHUB_WORKSPACE"'])
 
+    def test_ci_validates_renderer_abi_for_ds_and_dsi(self):
+        workflow = (hygiene.ROOT / ".github/workflows/build.yaml").read_text(
+            encoding="utf-8")
+        self.assertEqual(workflow.count("tools/validate_renderer_abi.py"), 2)
+        for name in ("NitroSwan-DS-0.7.7-custom.r7",
+                     "NitroSwan-DSi-0.7.7-custom.r7"):
+            self.assertIn(f"--build-dir build/{name}", workflow)
+
     def test_personal_paths_and_narrow_example_allowlist(self):
         # Construct forbidden samples so the test itself contains no private path.
         for path in ("C:" + "/Users/" + "alice/sdk", "/home/" + "alice/sdk",

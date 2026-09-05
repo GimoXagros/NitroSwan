@@ -46,6 +46,15 @@ jobs:
           make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r7 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 
+      - name: Validate linked renderer ABI
+        run: |
+          python3 tools/validate_renderer_abi.py \
+            --build-dir build/NitroSwan-DS-0.7.7-custom.r7 \
+            --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
+          python3 tools/validate_renderer_abi.py \
+            --build-dir build/NitroSwan-DSi-0.7.7-custom.r7 \
+            --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
+
       - name: Validate executable headers and embedded banners
         run: |
           python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r7.nds \

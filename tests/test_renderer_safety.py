@@ -223,6 +223,27 @@ class RendererSafetyTests(unittest.TestCase):
         self.assertIn('ldr r2,=rendererTraceOamSource', gfx)
         self.assertNotIn('bl rendererTraceWSFrame', gfx)
 
+    def test_paused_display_remap_rebuilds_without_tile_reset(self):
+        code = (ROOT / 'source/WonderSwan.c').read_text(encoding='utf-8')
+        body = code[code.index('void setupEmuBorderPalette()'):]
+        self.assertLess(body.index('paletteRasterRefreshHostColors(gGameHeader)'),
+                        body.index('gfxRebuildRendererState()'))
+        raster = (ROOT / 'source/PaletteRaster.c').read_text(encoding='utf-8')
+        refresh = raster[raster.index('void paletteRasterRefreshHostColors'):
+                         raster.index('void paletteRasterCapturePaletteWrite')]
+        self.assertIn('quiesceRaster();', refresh)
+        self.assertIn('resumeRaster(header, false);', refresh)
+        self.assertNotIn('objTileBufferReset', refresh)
+
+    def test_trace_path_uses_selected_data_folder(self):
+        files = (ROOT / 'source/FileHandling.c').read_text(encoding='utf-8')
+        body = files[files.index('int loadSettings()'):files.index('int saveSettings()')]
+        self.assertLess(body.index('ensureFolder(folderName)'),
+                        body.index('rendererTraceSetDataDirectory()'))
+        trace = (ROOT / 'source/RendererTrace.c').read_text(encoding='utf-8')
+        self.assertIn('getcwd(directory, sizeof(directory))', trace)
+        self.assertIn('fopen(tracePath, "a")', trace)
+
 
 if __name__ == "__main__":
     unittest.main()

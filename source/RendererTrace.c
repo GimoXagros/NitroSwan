@@ -2,6 +2,8 @@
 
 #include <nds.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "RendererTrace.h"
 #include "Cart.h"
@@ -10,7 +12,7 @@
 #include "PaletteRaster.h"
 
 #define TRACE_CAPACITY 128
-#define TRACE_FILE "/nitroswan/renderer-trace-r9.csv"
+#define TRACE_FILE "renderer-trace-r9.csv"
 
 typedef struct {
 	u32 sequence;
@@ -61,6 +63,7 @@ static u32 traceSequence;
 static u32 hostVBlankCounter;
 static bool traceFilesystemReady;
 static bool traceHeaderWritten;
+static char tracePath[1024];
 static u32 traceEpoch;
 static u32 vblankStart;
 static bool traceTimerReady;
@@ -166,16 +169,25 @@ void rendererTraceHostVBlank(void) {
 	rendererTraceRecord('V');
 }
 
+void rendererTraceSetDataDirectory(void) {
+	// Called after ensureFolder(), while cwd is the selected supported data
+	// folder. Retain its device-qualified path before ROM browsing changes cwd.
+	char directory[sizeof(tracePath)];
+	if (getcwd(directory, sizeof(directory)) == NULL) return;
+	const int length = snprintf(tracePath, sizeof(tracePath), "%s/%s", directory, TRACE_FILE);
+	if (length < 0 || (unsigned int)length >= sizeof(tracePath)) tracePath[0] = 0;
+}
+
 void rendererTraceHostVBlankBegin(void) {
 	hostVBlankCounter++;
 	vblankStart = traceTicks();
 }
 
 void rendererTraceFlush(void) {
-	if (!traceFilesystemReady || traceRead == traceWrite) {
+	if (!traceFilesystemReady || !tracePath[0] || traceRead == traceWrite) {
 		return;
 	}
-	FILE *file = fopen(TRACE_FILE, "a");
+	FILE *file = fopen(tracePath, "a");
 	if (file == NULL) {
 		return;
 	}

@@ -23,6 +23,9 @@
 #include "Cheats.h"
 #include "DspicoRomCache.h"
 #include "PaletteRaster.h"
+#ifdef WSC_VIDEO_TRACE
+#include "RendererTrace.h"
+#endif
 
 extern u8 flashMemChanged;		// From FlashMemory.s
 
@@ -185,6 +188,9 @@ int loadSettings() {
 	if (ensureFolder(folderName)) {
 		return 1;
 	}
+#ifdef WSC_VIDEO_TRACE
+	rendererTraceSetDataDirectory();
+#endif
 	if ((file = fopen(settingName, "rb"))) {
 		int len = fread(&cfg, 1, sizeof(ConfigData), file);
 		fclose(file);

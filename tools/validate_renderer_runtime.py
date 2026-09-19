@@ -152,6 +152,8 @@ def lifecycle(path, mode):
     arm.call('videoTileBufferFrameCommit')
     first = arm.call('videoTileBufferVBlank')
     copied = arm.read(arm.address('objPublishBytesHostFrame'))
+    counted = arm.read(arm.address('objTotalBytes'), 8)
+    bg_seed = arm.read(arm.address('bgBytesCopiedFrame'))
     repeated = arm.call('videoTileBufferVBlank')
     repeated_bytes = arm.read(arm.address('objPublishBytesHostFrame'))
     arm.call('paletteRasterPrepareStateRestore')
@@ -165,6 +167,7 @@ def lifecycle(path, mode):
     restored = arm.call('videoTileBufferVBlank')
     generation = arm.read(arm.address('publishedFrameGeneration'))
     return {'case': f'buffer-lifecycle-mode-{mode:02x}', 'obj_publish_bytes': copied,
+            'obj_counted_bytes': counted, 'bg_seed_bytes': bg_seed,
             'repeat_obj_publish_bytes': repeated_bytes,
             'pass': first != 0 and first == repeated and quiesced == 1 and stale == 0
             and restored != 0 and generation == 1 and repeated_bytes == 0
@@ -185,6 +188,25 @@ def quiesced_input(path):
             'pass': len(scans) == 1}
 
 
+def host_color_refresh(path):
+    arm = ArmImage(path)
+    arm.set('gSOC', 1, 1)
+    arm.write(arm.address('sphinx0') + arm.address('paletteRAM'), arm.SCRATCH)
+    arm.write(arm.SCRATCH + 2, 0x12, 2)
+    arm.write(arm.address('MAPPED_RGB') + 0x12 * 2, 0x5678, 2)
+    arm.set('wsvObjTileOffset', 512, 2)
+    arm.uc.mem_write(arm.address('wsvObjTileSnapshots'), b'\xAB' * 32768)
+    arm.call('paletteRasterRefreshHostColors', arm.SCRATCH + 0x2000)
+    arm.call('paletteRasterFrameComplete')
+    arm.call('paletteRasterCommitFrame')
+    arm.call('paletteRasterVBlank')
+    base = arm.read(0x05000002, 2)
+    preserved = bytes(arm.uc.mem_read(arm.address('wsvObjTileSnapshots'), 32768)) == b'\xAB' * 32768
+    return {'case': 'host-color-refresh-without-tile-reset', 'base': base,
+            'pass': base == 0x5678 and preserved
+            and arm.read(arm.address('wsvObjTileOffset'), 2) == 512}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('elf', type=Path)
@@ -197,6 +219,8 @@ def main():
     results += [lifecycle(args.elf, mode) for mode in (0, 0x80, 0xC0, 0xE0)]
     results.append(quiesced_input(args.elf))
     arm = ArmImage(args.elf)
+    if 'paletteRasterRefreshHostColors' in arm.symbols:
+        results.append(host_color_refresh(args.elf))
     if 'rendererAbiSentinelSelfTest' in arm.symbols:
         value = arm.call('rendererAbiSentinelSelfTest')
         results.append({'case': 'compiled-abi-sentinel', 'result': value, 'pass': value == 0})

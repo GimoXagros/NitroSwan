@@ -20,6 +20,7 @@ extern "C" {
 void paletteRasterConfigure(const WsHeader *header);
 void paletteRasterPrepareStateRestore(void);
 void paletteRasterCompleteStateRestore(const WsHeader *header);
+void paletteRasterRefreshHostColors(const WsHeader *header);
 void paletteRasterCapturePaletteWrite(unsigned int address);
 void wsvVideoRegisterWriteCallback(unsigned int port);
 void paletteRasterFrameComplete(void);

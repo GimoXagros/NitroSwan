@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 void rendererTraceInit(bool filesystemReady);
+void rendererTraceSetDataDirectory(void);
 void rendererTraceWSFrame(void);
 void rendererTraceHostVBlank(void);
 void rendererTraceHostVBlankBegin(void);

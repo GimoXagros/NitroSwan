@@ -164,4 +164,8 @@ void setupEmuBorderPalette() {
 	else {
 		setupPCV2BorderPalette();
 	}
+	if (!videoTileBufferIsQuiesced()) {
+		paletteRasterRefreshHostColors(gGameHeader);
+		gfxRebuildRendererState();
+	}
 }

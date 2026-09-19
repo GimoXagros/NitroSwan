@@ -184,6 +184,14 @@ void paletteRasterCompleteStateRestore(const WsHeader *header) {
 	resumeRaster(header, false);
 }
 
+void paletteRasterRefreshHostColors(const WsHeader *header) {
+	// Gamma/contrast remap the host lookup, not guest palette RAM. Discard
+	// deltas encoded with the old lookup and seed the paused display anew.
+	// Do not reset decoded tiles or advance the emulated CPU/scanline.
+	quiesceRaster();
+	resumeRaster(header, false);
+}
+
 void paletteRasterCapturePaletteWrite(unsigned int address) {
 	if (!wsvVideoWriteCallbackEnabled || address < 0xFE00 || address > 0xFFFF) {
 		return;

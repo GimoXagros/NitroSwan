@@ -223,17 +223,13 @@ class RendererSafetyTests(unittest.TestCase):
         self.assertIn('ldr r2,=rendererTraceOamSource', gfx)
         self.assertNotIn('bl rendererTraceWSFrame', gfx)
 
-    def test_paused_display_remap_rebuilds_without_tile_reset(self):
+    def test_paused_display_remap_preserves_completed_frame(self):
         code = (ROOT / 'source/WonderSwan.c').read_text(encoding='utf-8')
         body = code[code.index('void setupEmuBorderPalette()'):]
-        self.assertLess(body.index('paletteRasterRefreshHostColors(gGameHeader)'),
-                        body.index('gfxRebuildRendererState()'))
+        self.assertNotIn('gfxRebuildRendererState()', body)
         raster = (ROOT / 'source/PaletteRaster.c').read_text(encoding='utf-8')
-        refresh = raster[raster.index('void paletteRasterRefreshHostColors'):
-                         raster.index('void paletteRasterCapturePaletteWrite')]
-        self.assertIn('quiesceRaster();', refresh)
-        self.assertIn('resumeRaster(header, false);', refresh)
-        self.assertNotIn('objTileBufferReset', refresh)
+        self.assertIn('mapColor(active->base[index])', raster)
+        self.assertIn('mapColor(event->color)', raster)
 
     def test_trace_path_uses_selected_data_folder(self):
         files = (ROOT / 'source/FileHandling.c').read_text(encoding='utf-8')

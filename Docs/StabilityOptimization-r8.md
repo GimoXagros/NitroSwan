@@ -97,6 +97,10 @@ the 1KB palette allocation have not changed.
   color remapping and non-root trace paths. Both were addressed; final review
   is a release gate. Its initial shell could not find Python; execution results
   here come from the main task's configured Python/ARM toolchain, not that review.
+  The next review rejected a full rebuild for paused color changes because it
+  could publish an unfinished guest frame. Raw-color completed snapshots now
+  support host remapping without changing frame ownership; two ARM cases compare
+  the resulting OBJ colors directly to the existing assembly conversion.
 
 ## Measurement and optimization decisions
 

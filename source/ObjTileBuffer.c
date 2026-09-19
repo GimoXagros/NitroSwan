@@ -34,6 +34,8 @@ typedef struct {
 typedef struct {
 	CompletedFrameDescriptor descriptor;
 	u8 oam[OAM_SNAPSHOT_BYTES];
+	// Retain raw guest colors in the existing 512-byte slot. Only guest entries
+	// 128..255 are OBJ colors; mapping at publication also handles paused gamma.
 	u16 objPalette[OBJ_PALETTE_BYTES / sizeof(u16)];
 } CompletedFrameSlot;
 
@@ -269,7 +271,7 @@ void videoTileBufferFrameComplete(const void *completedOam) {
 		.objSnapshotEnabled = objSnapshotEnabled,
 	};
 	if (objSnapshotEnabled) {
-		memcpy(slot->objPalette, EMUPALBUFF + 0x100,
+		memcpy(slot->objPalette, sphinx0.paletteRAM,
 			OBJ_PALETTE_BYTES);
 		if (objTilesConvertedWSFrame == 0) {
 			skippedCleanGenerationCount++;
@@ -350,7 +352,11 @@ void videoTileBufferPublishPalette(void) {
 	if (activeFrameSlot >= 0) {
 		const CompletedFrameSlot *slot = &completedSlots[activeFrameSlot];
 		if (slot->descriptor.objSnapshotEnabled) {
-			memcpy((void *)SPRITE_PALETTE, slot->objPalette, OBJ_PALETTE_BYTES);
+			// WSC OBJ palette field is three bits (8 x 16 colors). Preserve the
+			// unused upper DS OBJ palette half, just as paletteTxAll does in 4bpp.
+			for (unsigned int index = 0; index < 128; index++) {
+				SPRITE_PALETTE[index] = MAPPED_RGB[slot->objPalette[128 + index] & 0x0FFF];
+			}
 		}
 	}
 }

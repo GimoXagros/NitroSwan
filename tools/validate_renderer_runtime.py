@@ -37,6 +37,7 @@ class ArmImage:
                 if symbol.name and symbol['st_shndx'] != 'SHN_UNDEF':
                     self.symbols.setdefault(symbol.name, []).append(symbol['st_value'])
         self.uc.reg_write(UC_ARM_REG_SP, 0x02EFFF00)
+        self.write(self.address('sphinx0') + self.address('paletteRAM'), self.SCRATCH + 0x3000)
 
     def address(self, symbol):
         values = set(self.symbols[symbol])
@@ -110,6 +111,7 @@ def palette_repeat(path, events):
     frame = arm.address('frames')
     # base[128], delta[384] {u8 line,index; u16 color}, count, dropped.
     arm.write(frame + 2, 0x1234, 2)
+    arm.write(arm.address('MAPPED_RGB') + 0x234 * 2, 0x1234, 2)
     arm.uc.mem_write(frame + 256, struct.pack('<BBH', 5, 1, 0x4321))
     arm.write(frame + 256 + 384 * 4, events, 2)
     arm.call('paletteRasterVBlank')
@@ -127,6 +129,8 @@ def palette_ownership(path):
     arm.call('objTileBufferReset')
     arm.call('objTileBufferCompleteStateRestore', 0xC0)
     palette = arm.address('EMUPALBUFF') + 512
+    arm.uc.mem_write(arm.SCRATCH + 0x3000 + 256, b'\x12\x00' * 128)
+    arm.write(arm.address('MAPPED_RGB') + 0x12 * 2, 0x1234, 2)
     arm.uc.mem_write(palette, b'\x34\x12' * 256)
     arm.call('videoTileBufferFrameComplete', arm.SCRATCH)
     arm.call('videoTileBufferFrameCommit')
@@ -135,13 +139,13 @@ def palette_ownership(path):
     live = bytes(arm.uc.mem_read(palette, 512))
     if 'videoTileBufferPublishPalette' in arm.symbols:
         arm.call('videoTileBufferPublishPalette')
-        published = bytes(arm.uc.mem_read(0x05000200, 512))
+        published = bytes(arm.uc.mem_read(0x05000200, 256))
     else:
-        published = live  # r8 subsequently DMA-copies this live buffer
+        published = live[:256]  # r8 subsequently DMA-copies this live buffer
     return {'case': 'vblank-does-not-write-live-obj-palette',
             'live_preserved': live == b'\x78\x56' * 256,
-            'completed_palette_published': published == b'\x34\x12' * 256,
-            'pass': live == b'\x78\x56' * 256 and published == b'\x34\x12' * 256}
+            'completed_palette_published': published == b'\x34\x12' * 128,
+            'pass': live == b'\x78\x56' * 256 and published == b'\x34\x12' * 128}
 
 
 def lifecycle(path, mode):
@@ -190,21 +194,55 @@ def quiesced_input(path):
 
 def host_color_refresh(path):
     arm = ArmImage(path)
+    arm.call('objTileBufferReset')
+    arm.call('objTileBufferCompleteStateRestore', 0xC0)
     arm.set('gSOC', 1, 1)
-    arm.write(arm.address('sphinx0') + arm.address('paletteRAM'), arm.SCRATCH)
-    arm.write(arm.SCRATCH + 2, 0x12, 2)
-    arm.write(arm.address('MAPPED_RGB') + 0x12 * 2, 0x5678, 2)
-    arm.set('wsvObjTileOffset', 512, 2)
-    arm.uc.mem_write(arm.address('wsvObjTileSnapshots'), b'\xAB' * 32768)
-    arm.call('paletteRasterRefreshHostColors', arm.SCRATCH + 0x2000)
+    arm.write(arm.SCRATCH + 0x3000 + 2, 0x12, 2)
+    arm.write(arm.SCRATCH + 0x3000 + 256, 0x12, 2)
+    arm.write(arm.address('MAPPED_RGB') + 0x12 * 2, 0x1234, 2)
+    arm.call('paletteRasterCompleteStateRestore', arm.SCRATCH + 0x2000)
+    arm.call('videoTileBufferFrameComplete', arm.SCRATCH)
     arm.call('paletteRasterFrameComplete')
-    arm.call('paletteRasterCommitFrame')
+    arm.call('videoTileBufferFrameCommit')
+    arm.call('videoTileBufferVBlank')
+    arm.call('videoTileBufferPublishPalette')
+    arm.call('paletteRasterVBlank')
+    generation = arm.read(arm.address('publishedFrameGeneration'))
+    # Host lookup changes while the guest is paused in its NEXT unfinished frame.
+    arm.uc.mem_write(arm.address('wsvObjTileSnapshots'), b'\xAB' * 32768)
+    arm.set('wsvObjTileOffset', 512, 2)
+    arm.write(arm.SCRATCH + 0x3000 + 256, 0x44, 2)  # next guest colors are NOT the completed frame
+    arm.write(arm.address('MAPPED_RGB') + 0x12 * 2, 0x5678, 2)
+    arm.call('videoTileBufferVBlank')
+    arm.call('videoTileBufferPublishPalette')
     arm.call('paletteRasterVBlank')
     base = arm.read(0x05000002, 2)
     preserved = bytes(arm.uc.mem_read(arm.address('wsvObjTileSnapshots'), 32768)) == b'\xAB' * 32768
     return {'case': 'host-color-refresh-without-tile-reset', 'base': base,
-            'pass': base == 0x5678 and preserved
-            and arm.read(arm.address('wsvObjTileOffset'), 2) == 512}
+            'pass': base == 0x5678 and preserved and arm.read(0x05000200, 2) == 0x5678
+            and arm.read(arm.address('wsvObjTileOffset'), 2) == 512
+            and arm.read(arm.address('publishedFrameGeneration')) == generation}
+
+
+def obj_palette_reference(path, mode):
+    arm = ArmImage(path)
+    arm.call('objTileBufferReset')
+    arm.call('objTileBufferCompleteStateRestore', mode)
+    arm.write(arm.address('sphinx0') + arm.address('wsvVideoMode'), mode, 1)
+    arm.uc.mem_write(arm.SCRATCH + 0x3000,
+                     struct.pack('<256H', *[(i * 23) & 0xfff for i in range(256)]))
+    arm.uc.mem_write(arm.address('MAPPED_RGB'),
+                     struct.pack('<4096H', *[(i * 5 + 7) & 0x7fff for i in range(4096)]))
+    arm.call('paletteTxAll')
+    expected = bytes(arm.uc.mem_read(arm.address('EMUPALBUFF') + 512, 256))
+    arm.call('videoTileBufferFrameComplete', arm.SCRATCH)
+    arm.call('videoTileBufferFrameCommit')
+    arm.call('videoTileBufferVBlank')
+    arm.uc.mem_write(0x05000300, b'\xAB' * 256)
+    arm.call('videoTileBufferPublishPalette')
+    return {'case': f'obj-palette-matches-asm-reference-{mode:02x}',
+            'pass': bytes(arm.uc.mem_read(0x05000200, 256)) == expected
+            and bytes(arm.uc.mem_read(0x05000300, 256)) == b'\xAB' * 256}
 
 
 def main():
@@ -219,8 +257,9 @@ def main():
     results += [lifecycle(args.elf, mode) for mode in (0, 0x80, 0xC0, 0xE0)]
     results.append(quiesced_input(args.elf))
     arm = ArmImage(args.elf)
-    if 'paletteRasterRefreshHostColors' in arm.symbols:
+    if 'videoTileBufferPublishPalette' in arm.symbols:
         results.append(host_color_refresh(args.elf))
+        results += [obj_palette_reference(args.elf, mode) for mode in (0xC0, 0xE0)]
     if 'rendererAbiSentinelSelfTest' in arm.symbols:
         value = arm.call('rendererAbiSentinelSelfTest')
         results.append({'case': 'compiled-abi-sentinel', 'result': value, 'pass': value == 0})

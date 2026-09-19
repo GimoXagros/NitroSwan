@@ -22,9 +22,10 @@ case observes zero scans before and one after the fix. They are not proof that
 the user's remaining motion artifact has been completely resolved.
 
 The review also identified stale paused Gamma/Contrast colors and a root-only
-trace path. Host palette changes now rebuild completed display state without
-resetting tiles or advancing guest time. Old mapped raster deltas are discarded;
-fresh gradients are captured when guest execution resumes. Trace capture retains
+trace path. Completed OBJ palette slots and bounded BG bases/deltas retain raw
+guest colors and map them at host publication/replay, so Gamma/Contrast changes
+reuse the same completed frame without publishing an unfinished build frame.
+No new palette storage is allocated. Trace capture retains
 the actual data-directory path selected by the existing folder lookup.
 
 ## Evidence levels
@@ -34,7 +35,7 @@ the actual data-directory path selected by the existing folder lookup.
 | r8 baseline Python | 76 tests PASS |
 | Candidate Python | 80 tests PASS (source/model/tooling, not game compatibility) |
 | Host C | RTC calendar and DSpico cache vectors PASS |
-| Linked ARM runtime | 15 synthetic cases per candidate DS/DSi ELF PASS; r8 fails 9 of 14 applicable cases |
+| Linked ARM runtime | 17 synthetic cases per candidate DS/DSi ELF PASS; r8 fails 9 of 14 applicable cases |
 | Optional ABI sentinel | Compiled ARM sentinel PASS in Unicorn; device execution NOT RUN |
 | Object ABI | 7 symbols / 10 reviewed stack paths, both profiles |
 | Packaging | Both NDS header CRC, executable ranges, six banner titles/icon CRC |
@@ -49,6 +50,9 @@ render pixels, and therefore cannot certify real-hardware correctness. It checks
 callee-saved registers and balanced stacks on every invoked entry. Lifecycle
 cases cover buffer reset, restore, repeated publication, 2bpp/4bpp, packed/planar
 selection and generation wrap, not complete game savestate round trips.
+Additional cases compare all 128 active OBJ colors against the original linked
+`paletteTxAll` assembly for both packed/planar 4bpp, preserve the unused DS OBJ
+palette half, and remap paused colors without changing completed generation.
 
 Native smoke-test limitation: melonDS's homebrew auto-injection changed the
 existing test SD image despite the requested read-only setting. Native testing

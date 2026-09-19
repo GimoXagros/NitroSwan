@@ -172,7 +172,7 @@ class GraphicsCoreTests(unittest.TestCase):
         main = (ROOT / "source" / "Main.c").read_text(encoding="utf-8")
         self.assertIn("#define DS_GAME_TOP ((SCREEN_HEIGHT - WS_VISIBLE_LINES) / 2)", raster)
         self.assertIn("SetYtrigger(DS_GAME_TOP + active->delta[0].line);", raster)
-        self.assertIn("BG_PALETTE[index] = active->base[index];", raster)
+        self.assertIn("BG_PALETTE[index] = mapColor(active->base[index]);", raster)
         vblank = main[main.index("void myVblank(void)") : main.index("int main(")]
         self.assertLess(vblank.index("videoTileBufferVBlank();"), vblank.index("vblIrqHandler(completedOam);"))
         self.assertLess(vblank.index("vblIrqHandler(completedOam);"), vblank.index("paletteRasterVBlank();"))

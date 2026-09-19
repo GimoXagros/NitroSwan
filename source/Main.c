@@ -60,18 +60,25 @@ static const u8 guiPalette[] = {
 //---------------------------------------------------------------------------------
 void myVblank(void) {
 //---------------------------------------------------------------------------------
+#ifdef WSC_VIDEO_TRACE
+	rendererTraceHostVBlankBegin();
+#endif
 	vBlankOverflow = true;
+	// Menus must remain responsive before the first ROM/frame and during reset.
+	// Input sampling is independent of renderer publication/quiescence.
+	scanKeys();
 //	DC_FlushRange(EMUPALBUFF, 0x400);
 	if (!videoTileBufferIsQuiesced()) {
 		const void *completedOam = videoTileBufferVBlank();
 		vblIrqHandler(completedOam);
+		videoTileBufferPublishPalette();
 #if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
 		paletteRasterVBlank();
 #endif
-#ifdef WSC_VIDEO_TRACE
-		rendererTraceHostVBlank();
-#endif
 	}
+#ifdef WSC_VIDEO_TRACE
+	rendererTraceHostVBlank();
+#endif
 }
 
 //---------------------------------------------------------------------------------

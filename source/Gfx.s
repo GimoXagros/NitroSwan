@@ -560,6 +560,10 @@ vblIrqHandler:
 	ldr r1,dmaOamBuffer			;@ DMA3 src, OAM transfer:
 	cmp r5,#0
 	movne r1,r5
+#ifdef WSC_VIDEO_TRACE
+	ldr r2,=rendererTraceOamSource
+	str r1,[r2]
+#endif
 	mov r2,#OAM					;@ DMA3 dst
 	mov r3,#0x84000000			;@ 32bit incsrc incdst
 	orr r3,r3,#128*2			;@ 128 sprites * 2 longwords
@@ -615,7 +619,6 @@ exit75Hz:
 	strb r0,frameDone
 nothingNew:
 
-	blx scanKeys
 	ldmfd sp!,{r4-r6,pc}
 
 ;@----------------------------------------------------------------------------
@@ -692,9 +695,6 @@ gfxRebuildRendererState:		;@ Rebuild restored host state without advancing WS ti
 	bl paletteRasterFrameComplete
 	bl videoTileBufferFrameCommit
 	bl paletteRasterBeginFrame
-#ifdef WSC_VIDEO_TRACE
-	bl rendererTraceWSFrame
-#endif
 	ldmfd sp!,{spxptr,lr}
 
 	adr r0,tmpOamBuffer
@@ -721,9 +721,6 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	bl paletteRasterFrameComplete
 	bl videoTileBufferFrameCommit
 	bl paletteRasterBeginFrame
-#ifdef WSC_VIDEO_TRACE
-	bl rendererTraceWSFrame
-#endif
 	ldmfd sp!,{spxptr,lr}
 ;@--------------------------
 

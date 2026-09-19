@@ -40,6 +40,7 @@ extern volatile u32 bgBufferSwapCount;
 #ifdef WSC_VIDEO_TRACE
 typedef struct {
 	u32 completedFrameGeneration;
+	u32 observedOamFrame;
 	u32 objBuildGeneration;
 	u32 readyFrameGeneration;
 	u32 readyTileGeneration;

@@ -199,6 +199,30 @@ class RendererSafetyTests(unittest.TestCase):
         vblank["oam_frame"] = "8"
         self.assertEqual(analyzer.analyze([base, vblank])["status"], "PASS")
 
+    def test_trace_never_passes_empty_malformed_or_unobserved_capture(self):
+        analyzer = load_trace_analyzer()
+        self.assertEqual(analyzer.analyze([])['status'], 'BLOCKED')
+        self.assertEqual(analyzer.analyze([{'event': 'W'}])['status'], 'BLOCKED')
+        row = dict.fromkeys(('seq', 'ws_frame', 'obj_dirty_tiles', 'obj_seed_bytes',
+                             'palette_drops', 'obj_ready_frame', 'obj_ready_tile_gen',
+                             'obj_published_frame', 'oam_frame',
+                             'obj_published_tile_gen'), '1')
+        row.update(event='W', obj_dirty_tiles='0', obj_seed_bytes='0',
+                   sprite_latch_frame=str(0xFFFFFFFF), palette_drops='2')
+        host = dict(row, event='V', seq='2')
+        result = analyzer.analyze([row, host, dict(host, seq='3')])
+        self.assertEqual(result['status'], 'BLOCKED')
+        self.assertEqual(result['counts']['palette_drops'], 2)
+
+    def test_trace_capture_is_bounded_and_observes_actual_dma_source(self):
+        trace = (ROOT / 'source/RendererTrace.c').read_text(encoding='utf-8')
+        gfx = (ROOT / 'source/Gfx.s').read_text(encoding='utf-8')
+        self.assertIn('const u16 end = traceWrite;', trace)
+        self.assertIn('while (traceRead != end)', trace)
+        self.assertIn('.spriteLatchFrame = 0xFFFFFFFF', trace)
+        self.assertIn('ldr r2,=rendererTraceOamSource', gfx)
+        self.assertNotIn('bl rendererTraceWSFrame', gfx)
+
 
 if __name__ == "__main__":
     unittest.main()

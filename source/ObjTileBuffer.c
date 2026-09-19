@@ -5,6 +5,9 @@
 #include "Gfx.h"
 #include "ObjTileBuffer.h"
 #include "PaletteRaster.h"
+#ifdef WSC_VIDEO_TRACE
+#include "RendererTrace.h"
+#endif
 
 #define OBJ_TILE_COUNT 512
 #define OBJ_TILE_BYTES 32
@@ -141,6 +144,9 @@ void objTileBufferQuiesce(void) {
 
 void objTileBufferReset(void) {
 	objTileBufferQuiesce();
+#ifdef WSC_VIDEO_TRACE
+	rendererTraceReset();
+#endif
 	wsvObjTileOffset = 0;
 	wsvObjReadyTileOffset = 0;
 	wsvBgTileOffset = 0;
@@ -291,6 +297,10 @@ void videoTileBufferFrameCommit(void) {
 	pendingFrameSlot = -1;
 	paletteRasterCommitFrame();
 	rendererQuiesced = false;
+#ifdef WSC_VIDEO_TRACE
+	// Observe ready metadata before an IRQ can consume it (not after BeginFrame).
+	rendererTraceWSFrame();
+#endif
 	leaveCriticalSection(oldIme);
 }
 
@@ -347,12 +357,19 @@ void videoTileBufferPublishPalette(void) {
 
 #ifdef WSC_VIDEO_TRACE
 void objTileBufferGetTraceState(ObjTileTraceState *state) {
+	u32 observedOamFrame = 0xFFFFFFFF;
+	for (unsigned int i = 0; i < 3; i++) {
+		if (rendererTraceOamSource == completedSlots[i].oam) {
+			observedOamFrame = completedSlots[i].descriptor.frameGeneration;
+		}
+	}
 	const CompletedFrameDescriptor *ready = readyFrameSlot >= 0
 		? &completedSlots[readyFrameSlot].descriptor : NULL;
 	const CompletedFrameDescriptor *active = activeFrameSlot >= 0
 		? &completedSlots[activeFrameSlot].descriptor : NULL;
 	*state = (ObjTileTraceState){
 		.completedFrameGeneration = completedFrameGeneration,
+		.observedOamFrame = observedOamFrame,
 		.objBuildGeneration = objBuildGeneration,
 		.readyFrameGeneration = ready ? ready->frameGeneration : 0,
 		.readyTileGeneration = ready ? ready->tileGeneration : 0,

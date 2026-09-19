@@ -21,7 +21,9 @@ jobs:
       - name: Install validation runtime
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends gcc libc6-dev python3 python3-unicorn python3-pyelftools
+          apt-get install -y --no-install-recommends gcc libc6-dev python3 python3-venv
+          python3 -m venv /tmp/nitroswan-validation
+          /tmp/nitroswan-validation/bin/pip install unicorn==2.1.4 pyelftools==0.32
 
       - name: Validate repository hygiene
         run: |
@@ -57,8 +59,8 @@ jobs:
 
       - name: Execute linked ARM renderer regressions
         run: |
-          python3 tools/validate_renderer_runtime.py build/NitroSwan-DS-0.7.7-custom.r9.elf
-          python3 tools/validate_renderer_runtime.py build/NitroSwan-DSi-0.7.7-custom.r9.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DS-0.7.7-custom.r9.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DSi-0.7.7-custom.r9.elf
 
       - name: Validate executable headers and embedded banners
         run: |

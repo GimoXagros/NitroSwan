@@ -254,7 +254,7 @@ void paletteRasterVBlank(void) {
 		paletteRasterVCountIrqsMaximum = paletteRasterVCountIrqsFrame;
 	}
 	paletteRasterVCountIrqsFrame = 0;
-	if (!rasterEnabled || readyFrame < 0) {
+	if (!rasterEnabled || (readyFrame < 0 && activeFrame < 0)) {
 		stopReplayIrq();
 		return;
 	}
@@ -263,8 +263,12 @@ void paletteRasterVBlank(void) {
 	stopReplayIrq();
 	return;
 #else
-	activeFrame = readyFrame;
-	readyFrame = -1;
+	// A host refresh without a new WS completion still displays the active
+	// frame. Its base and deltas must be replayed after the host palette DMA.
+	if (readyFrame >= 0) {
+		activeFrame = readyFrame;
+		readyFrame = -1;
+	}
 	PaletteDeltaFrame *active = &frames[activeFrame];
 #if PALETTE_RASTER_DIAGNOSTIC == PALETTE_RASTER_BG_ONLY
 	for (unsigned int index = 0; index < WS_BG_COLORS; index++) {

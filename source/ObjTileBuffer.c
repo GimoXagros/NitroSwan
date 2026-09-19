@@ -319,8 +319,6 @@ const void *videoTileBufferVBlank(void) {
 				addObjTransferBytes(OBJ_BANK_BYTES);
 				publishedTileGeneration = completed.tileGeneration;
 			}
-			memcpy(EMUPALBUFF + 0x100, slot->objPalette,
-				OBJ_PALETTE_BYTES);
 		}
 		publishedOamSource = slot->oam;
 		publishedFrameGeneration = completed.frameGeneration;
@@ -334,6 +332,17 @@ const void *videoTileBufferVBlank(void) {
 	REG_BG0CNT = (GFX_BG0CNT & ~tileMask) | BG_TILE_BASE(tileBase);
 	REG_BG1CNT = (GFX_BG1CNT & ~tileMask) | BG_TILE_BASE(tileBase);
 	return publishedOamSource;
+}
+
+void videoTileBufferPublishPalette(void) {
+	// Called in VBlank AFTER the legacy palette DMA. Never write back into
+	// EMUPALBUFF: the interrupted WS frame may be converting its palette there.
+	if (activeFrameSlot >= 0) {
+		const CompletedFrameSlot *slot = &completedSlots[activeFrameSlot];
+		if (slot->descriptor.objSnapshotEnabled) {
+			memcpy((void *)SPRITE_PALETTE, slot->objPalette, OBJ_PALETTE_BYTES);
+		}
+	}
 }
 
 #ifdef WSC_VIDEO_TRACE

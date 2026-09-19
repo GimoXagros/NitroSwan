@@ -541,7 +541,7 @@ vblIrqHandler:
 	.type vblIrqHandler STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4-r6,lr}
-	mov r4,r0					;@ OAM paired with the completed tile descriptor.
+	mov r5,r0					;@ Preserve OAM across the r3-r4 scroll load below.
 	bl calculateFPS
 
 	mov r6,#REG_BASE
@@ -558,8 +558,8 @@ vblIrqHandler:
 
 	add r0,r6,#REG_DMA3SAD
 	ldr r1,dmaOamBuffer			;@ DMA3 src, OAM transfer:
-	cmp r4,#0
-	movne r1,r4
+	cmp r5,#0
+	movne r1,r5
 	mov r2,#OAM					;@ DMA3 dst
 	mov r3,#0x84000000			;@ 32bit incsrc incdst
 	orr r3,r3,#128*2			;@ 128 sprites * 2 longwords

@@ -65,6 +65,7 @@ void myVblank(void) {
 	if (!videoTileBufferIsQuiesced()) {
 		const void *completedOam = videoTileBufferVBlank();
 		vblIrqHandler(completedOam);
+		videoTileBufferPublishPalette();
 #if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
 		paletteRasterVBlank();
 #endif

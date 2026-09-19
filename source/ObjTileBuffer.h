@@ -15,6 +15,7 @@ void videoTileBufferFrameComplete(const void *completedOam);
 void videoTileBufferFrameCommit(void);
 bool videoTileBufferIsQuiesced(void);
 const void *videoTileBufferVBlank(void);
+void videoTileBufferPublishPalette(void);
 
 extern volatile u16 wsvObjTileOffset;
 extern volatile u16 wsvObjReadyTileOffset;

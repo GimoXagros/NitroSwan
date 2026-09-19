@@ -21,7 +21,7 @@ jobs:
       - name: Install validation runtime
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends gcc libc6-dev python3
+          apt-get install -y --no-install-recommends gcc libc6-dev python3 python3-unicorn python3-pyelftools
 
       - name: Validate repository hygiene
         run: |
@@ -39,36 +39,43 @@ jobs:
         run: python3 tools/run_core_regressions.py
 
       - name: Build DS version
-        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r8
+        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r9
 
       - name: Build DSi/DSpico version
         run: |
-          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r8 DSPICO_3DS_BUILD=1 \
+          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r9 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 
       - name: Validate linked renderer ABI
         run: |
           python3 tools/validate_renderer_abi.py \
-            --build-dir build/NitroSwan-DS-0.7.7-custom.r8 \
+            --build-dir build/NitroSwan-DS-0.7.7-custom.r9 \
             --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
           python3 tools/validate_renderer_abi.py \
-            --build-dir build/NitroSwan-DSi-0.7.7-custom.r8 \
+            --build-dir build/NitroSwan-DSi-0.7.7-custom.r9 \
             --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
+
+      - name: Execute linked ARM renderer regressions
+        run: |
+          python3 tools/validate_renderer_runtime.py build/NitroSwan-DS-0.7.7-custom.r9.elf
+          python3 tools/validate_renderer_runtime.py build/NitroSwan-DSi-0.7.7-custom.r9.elf
 
       - name: Validate executable headers and embedded banners
         run: |
-          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r8.nds \
-            --dsi NitroSwan-DSi-0.7.7-custom.r8.nds
+          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r9.nds \
+            --dsi NitroSwan-DSi-0.7.7-custom.r9.nds
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: NitroSwan-0.7.7-custom.r8
+          name: NitroSwan-0.7.7-custom.r9
           path: |
             History.txt
-            NitroSwan-DS-0.7.7-custom.r8.nds
-            NitroSwan-DSi-0.7.7-custom.r8.nds
+            NitroSwan-DS-0.7.7-custom.r9.nds
+            NitroSwan-DSi-0.7.7-custom.r9.nds
             README.md
             WonderWitch.md
             NitroSwan_todo.txt
             Docs/ReleaseValidation-r8.md
+            Docs/StabilityOptimization-r8.md
+            Docs/ReleaseValidation-r9.md

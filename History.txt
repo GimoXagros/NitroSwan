@@ -1,6 +1,23 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r9 - 2026-09-19 (GimoXagros custom prerelease)
+	Fixed the completed OAM DMA source being overwritten by the BG scroll load
+	in vblIrqHandler. Kept the completed pointer in a non-overlapping register.
+	Published completed OBJ palettes to host palette RAM after the legacy DMA,
+	without overwriting the interrupted WS frame's live EMUPALBUFF work area.
+	Replayed the active BG palette on repeated host refreshes without a new WS
+	completion. Event-free frames continue to disable VCOUNT interrupts.
+	Sampled input even when the renderer is quiesced before loading a ROM/reset.
+	Added linked-ARM synthetic MMIO/ABI/lifecycle regressions and CI coverage.
+	Corrected diagnostic trace ownership, bounded flushing, epoch and timer
+	observations; missing latch evidence and dropped records no longer pass.
+	Retained the guest CPU, line-142/144 timing, tile limits, 1KB EMUPALBUFF,
+	DMA3 window ownership and all submodule revisions. No measured speedup claim.
+	This is a prerelease from a separate Draft PR, not a main merge or a claim
+	that remaining One Piece/Digimon motion artifacts are fixed on DSpico.
+	See Docs/ReleaseValidation-r9.md and Docs/StabilityOptimization-r8.md.
+
 V0.7.7-custom.r8 - 2026-09-05 (GimoXagros custom build)
 	Aligned the reviewed ARM-to-C renderer callback paths to the AAPCS 8-byte
 	stack rule, including byte/word palette writes, video-register writes,

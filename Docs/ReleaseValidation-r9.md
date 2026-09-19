@@ -50,6 +50,15 @@ callee-saved registers and balanced stacks on every invoked entry. Lifecycle
 cases cover buffer reset, restore, repeated publication, 2bpp/4bpp, packed/planar
 selection and generation wrap, not complete game savestate round trips.
 
+Native smoke-test limitation: melonDS's homebrew auto-injection changed the
+existing test SD image despite the requested read-only setting. Native testing
+was stopped. A read-only image audit found the two injected test executables,
+164 files identical to their host copies and one pre-existing save whose difference
+from the host copy cannot be dated without a before-file inventory. No rollback
+or save overwrite was attempted. A private incident report is retained locally.
+Future native tests must use explicitly disposable media, not trust the frontend
+read-only switch. This incident is not a game-save compatibility PASS.
+
 ## Reproduce
 
 Install Python 3, a native C compiler, `unicorn`, `pyelftools`, and the project's

@@ -88,7 +88,8 @@ the 1KB palette allocation have not changed.
   substitute for arbitrary IRQ-interleaving exploration.
 - Synthetic 2bpp/4bpp packed/planar, quiesce/reset/restore and generation wrap
   use the real buffer functions. Whole-game savestate/NVRAM behavior is unchanged
-  and remains a separate manual matrix. Original private data is never overwritten.
+  and remains a separate manual matrix. The submitted files were not edited;
+  the native test-image mutation is disclosed in the r9 validation record.
 - Triple slot metadata and pending/ready ownership are retained. Unbounded
   producer schedules, BG map/bank writes, latch timing and complete pixel
   composition are not proven by this task's finite cases.
@@ -143,6 +144,8 @@ graphics-vram-pipeline-debugger and timing-interrupt-dma-analyzer isolated host
 publication; log-analyzer preserved comparison anchors and missing observations;
 save-nvram-state-validator limited restore claims to tested buffer paths;
 computer-use inspected a fresh melonDS boot/file browser with read-only media.
+The read-only request did not prevent melonDS's homebrew injection from changing
+the test image; native tests were stopped and a private integrity report retained.
 No CPU/mapper/bisect/hardware-register specialist was used: no first divergence
 in those subsystems or repeatably good/bad game endpoints was established.
 

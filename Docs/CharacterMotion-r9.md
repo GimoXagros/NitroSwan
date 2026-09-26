@@ -63,6 +63,12 @@ assets):
 | `NitroSwan-DS-r9-motion-test.nds` | `cd95ed190cd900f62eefee851a0404e6bb7796ed27f407847863ac45edb0f9a4` |
 | `NitroSwan-DSi-r9-motion-test.nds` | `7484d3a48beecc44525b0a6a438c58feb7f028de06530c6d95be91ab947377d4` |
 
+The CI workflow retains the repository validator's established
+`NitroSwan-*-0.7.7-custom.r9` executable and artifact names. Those CI outputs
+contain this PR's candidate and tests; the inherited filename is not a release,
+stable/version claim, or replacement of an existing public r9 asset. The
+separately built local artifacts above use `r9-motion-test` names.
+
 The new vectors also test repeated publication, four `gfxRefresh` calls, reset
 and restore paths, and two consecutive completed guest frames with another
 frame beginning before host publication. The restore-only prepare handles a

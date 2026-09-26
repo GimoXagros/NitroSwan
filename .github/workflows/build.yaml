@@ -41,45 +41,45 @@ jobs:
         run: python3 tools/run_core_regressions.py
 
       - name: Build DS version
-        run: make -j2 NAME=NitroSwan-DS-r9-motion-test
+        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r9
 
       - name: Build DSi/DSpico version
         run: |
-          make -j2 NAME=NitroSwan-DSi-r9-motion-test DSPICO_3DS_BUILD=1 \
+          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r9 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 
       - name: Validate linked renderer ABI
         run: |
           python3 tools/validate_renderer_abi.py \
-            --build-dir build/NitroSwan-DS-r9-motion-test \
+            --build-dir build/NitroSwan-DS-0.7.7-custom.r9 \
             --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
           python3 tools/validate_renderer_abi.py \
-            --build-dir build/NitroSwan-DSi-r9-motion-test \
+            --build-dir build/NitroSwan-DSi-0.7.7-custom.r9 \
             --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
 
       - name: Execute linked ARM renderer regressions
         run: |
-          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DS-r9-motion-test.elf
-          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DSi-r9-motion-test.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DS-0.7.7-custom.r9.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DSi-0.7.7-custom.r9.elf
 
       - name: Execute linked ARM sprite visibility regressions
         run: |
-          /tmp/nitroswan-validation/bin/python tools/validate_character_motion_runtime.py build/NitroSwan-DS-r9-motion-test.elf
-          /tmp/nitroswan-validation/bin/python tools/validate_character_motion_runtime.py build/NitroSwan-DSi-r9-motion-test.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_character_motion_runtime.py build/NitroSwan-DS-0.7.7-custom.r9.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_character_motion_runtime.py build/NitroSwan-DSi-0.7.7-custom.r9.elf
 
       - name: Validate executable headers and embedded banners
         run: |
-          python3 tools/validate_nds.py --ds NitroSwan-DS-r9-motion-test.nds \
-            --dsi NitroSwan-DSi-r9-motion-test.nds
+          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r9.nds \
+            --dsi NitroSwan-DSi-0.7.7-custom.r9.nds
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: NitroSwan-r9-character-motion-test
+          name: NitroSwan-0.7.7-custom.r9
           path: |
             History.txt
-            NitroSwan-DS-r9-motion-test.nds
-            NitroSwan-DSi-r9-motion-test.nds
+            NitroSwan-DS-0.7.7-custom.r9.nds
+            NitroSwan-DSi-0.7.7-custom.r9.nds
             README.md
             WonderWitch.md
             NitroSwan_todo.txt

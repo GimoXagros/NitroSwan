@@ -2,6 +2,8 @@ NitroSwan Todo — candidate prerelease v0.7.7-custom.r9; stable main/release r8
 2026-09-19 candidate update: four reproduced publication/input defects corrected;
 linked ARM regressions added. Residual One Piece/Digimon motion remains OPEN.
 See Docs/ReleaseValidation-r9.md and Docs/StabilityOptimization-r8.md.
+Separate character-motion follow-up candidate: Docs/CharacterMotion-r9.md;
+synthetic linked-ARM regression passes, but actual game-scene A/B remains pending.
 Next gates, in order:
   P0 / Medium: DSpico A/B r8 vs r9, One Piece J/K and Battle Spirit 1.0/1.5/Frontier.
   P0 / Very high: scene-aligned latch/OAM/tile/palette first-divergence capture.

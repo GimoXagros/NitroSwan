@@ -29,6 +29,9 @@ core.
 
 검증 범위·제한과 실기 순서는 [r9 검증 기록](Docs/ReleaseValidation-r9.md),
 감사·계측 근거는 [r8 안정화 기록](Docs/StabilityOptimization-r8.md)을 참고하십시오.
+분리된 캐릭터 모션 후속 후보와 검증 한계는
+[Character Motion r9](Docs/CharacterMotion-r9.md)에 기록합니다. 실제 게임 장면
+통과나 새 배포판을 뜻하지 않습니다.
 
 ## 0.7.7-custom.r8 렌더러 안전성 개선 (이전 버전)
 

@@ -10,6 +10,7 @@ import subprocess
 
 OBJECTS = {
     "Gfx.s.o": {
+        "gfxPrepareSprites": ("push\t{r4, lr}", "pop\t{r4, pc}"),
         "gfxRefresh": (r"(?:push|stmfd\s+sp!,)\s*\{lr\}",
                        r"bl\s+.*<gfxEndFrame>"),
         "gfxRebuildRendererState": (

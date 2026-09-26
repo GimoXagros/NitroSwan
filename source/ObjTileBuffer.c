@@ -178,6 +178,9 @@ void objTileBufferReset(void) {
 }
 
 void objTileBufferBeginFrame(unsigned int videoMode) {
+	// The previous sprite latch is visible now. Preserve its OAM before the
+	// end-of-visible-frame latch replaces the table for the following frame.
+	gfxPrepareSprites();
 	objTilesConvertedWSFrame = 0;
 	objSeedBytesFrame = 0;
 	bgDirtyMarkersFrame = 0;

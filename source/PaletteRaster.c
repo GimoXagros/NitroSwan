@@ -1,5 +1,4 @@
 #include <nds.h>
-#include <string.h>
 
 #include "PaletteRaster.h"
 #include "Cart.h"
@@ -14,7 +13,7 @@
 typedef struct {
 	u8 line;
 	u8 index;
-	u16 color;
+	u16 color; // Raw RGB12; map on replay after any host gamma/contrast change.
 } PaletteDelta;
 
 typedef struct {
@@ -22,6 +21,7 @@ typedef struct {
 	PaletteDelta delta[MAX_BG_PALETTE_DELTAS];
 	u16 count;
 	u16 dropped;
+	bool replayable;
 } PaletteDeltaFrame;
 
 static PaletteDeltaFrame frames[PALETTE_FRAME_COUNT];
@@ -36,6 +36,20 @@ static u16 previousBackdrop;
 
 static inline u16 mapColor(u16 rawColor) {
 	return MAPPED_RGB[rawColor & 0x0FFF];
+}
+
+static bool directColorPalette(void) {
+	// Mono and color 2bpp require paletteTxAll's expanded palette layout.
+	return (sphinx0.videoMode & 0xC0) == 0xC0;
+}
+
+static bool canCapturePalette(void) {
+	PaletteDeltaFrame *frame = &frames[captureFrame];
+	if (!directColorPalette()) {
+		frame->replayable = false;
+	}
+	// An observed incompatible mode invalidates this whole capture.
+	return frame->replayable;
 }
 
 static inline u16 backdropRawColor(const u16 *palette) {
@@ -53,28 +67,29 @@ static void stopReplayIrq(void) {
 static void snapshotBase(PaletteDeltaFrame *frame) {
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
 	previousBackdrop = backdropRawColor(palette);
-	frame->base[0] = mapColor(previousBackdrop);
+	frame->base[0] = previousBackdrop & 0x0FFF;
 	for (unsigned int index = 1; index < WS_BG_COLORS; index++) {
 		const u16 rawColor = palette[index];
 		previousPalette[index] = rawColor;
-		frame->base[index] = mapColor(rawColor);
+		frame->base[index] = rawColor & 0x0FFF;
 	}
 }
 
 static void resetCaptureFrame(PaletteDeltaFrame *frame) {
 	frame->count = 0;
 	frame->dropped = 0;
+	frame->replayable = directColorPalette();
 }
 
 static void setBaseColor(PaletteDeltaFrame *frame, unsigned int index, u16 rawColor) {
 	if (index < WS_BG_COLORS) {
-		frame->base[index] = mapColor(rawColor);
+		frame->base[index] = rawColor & 0x0FFF;
 	}
 }
 
 static void appendDelta(unsigned int line, unsigned int index, u16 rawColor) {
 	PaletteDeltaFrame *frame = &frames[captureFrame];
-	const u16 color = mapColor(rawColor);
+	const u16 color = rawColor & 0x0FFF;
 	for (int event = frame->count - 1;
 		event >= 0 && frame->delta[event].line == line; event--) {
 		if (frame->delta[event].index == index) {
@@ -92,6 +107,9 @@ static void appendDelta(unsigned int line, unsigned int index, u16 rawColor) {
 }
 
 static void captureBackdropWrite(void) {
+	if (!canCapturePalette()) {
+		return;
+	}
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
 	const u16 backdrop = backdropRawColor(palette);
 	if (backdrop == previousBackdrop) {
@@ -116,26 +134,37 @@ static int nextFreeFrame(int active, int ready) {
 	return 0;
 }
 
-void paletteRasterConfigure(const WsHeader *header) {
-	// Select emulated hardware, not a title or a particular ROM dump.
-	const bool colorHardware = header != NULL && gSOC != SOC_ASWAN;
-	rasterEnabled = colorHardware;
-	wsvVideoWriteCallbackEnabled = colorHardware;
+void paletteRasterSuspend(void) {
+	const int oldIme = enterCriticalSection();
+	wsvVideoWriteCallbackEnabled = false;
+	rasterEnabled = false;
 	readyFrame = -1;
 	activeFrame = -1;
-	captureFrame = 0;
 	replayCursor = 0;
-#if PALETTE_RASTER_DIAGNOSTIC != PALETTE_RASTER_CAPTURE_ONLY
 	stopReplayIrq();
-#endif
+	leaveCriticalSection(oldIme);
+}
+
+void paletteRasterConfigure(const WsHeader *header) {
+	paletteRasterSuspend();
+	// Select emulated hardware, not a title or a particular ROM dump.
+	const bool colorHardware = header != NULL && gSOC != SOC_ASWAN;
+	captureFrame = 0;
 	if (colorHardware) {
 		resetCaptureFrame(&frames[0]);
 		snapshotBase(&frames[0]);
 	}
+	const int oldIme = enterCriticalSection();
+	rasterEnabled = colorHardware;
+	wsvVideoWriteCallbackEnabled = colorHardware;
+	leaveCriticalSection(oldIme);
 }
 
 void paletteRasterCapturePaletteWrite(unsigned int address) {
 	if (!wsvVideoWriteCallbackEnabled || address < 0xFE00 || address > 0xFFFF) {
+		return;
+	}
+	if (!canCapturePalette()) {
 		return;
 	}
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
@@ -156,7 +185,8 @@ void paletteRasterCapturePaletteWrite(unsigned int address) {
 	}
 }
 
-void wsvVideoRegisterWriteCallback(unsigned int port) {
+// The host assembly entry aligns the stack from either Sphinx write path.
+void paletteRasterCaptureRegisterWrite(unsigned int port) {
 	if (wsvVideoWriteCallbackEnabled && port == 0x01) {
 		captureBackdropWrite();
 	}
@@ -170,6 +200,11 @@ void paletteRasterFrameComplete(void) {
 	// VBlank can consume/clear readyFrame between the argument loads below.
 	// Keep excluding the completed slot even after it becomes active.
 	const int finishedFrame = captureFrame;
+	if (!canCapturePalette()) {
+		frames[finishedFrame].count = 0;
+		frames[finishedFrame].dropped = 0;
+	}
+	// Publish unsupported frames too: they must retire an older color replay.
 	readyFrame = finishedFrame;
 	captureFrame = nextFreeFrame(activeFrame, finishedFrame);
 	resetCaptureFrame(&frames[captureFrame]);
@@ -177,7 +212,7 @@ void paletteRasterFrameComplete(void) {
 }
 
 void paletteRasterVBlank(void) {
-	if (!rasterEnabled || readyFrame < 0) {
+	if (!rasterEnabled || (readyFrame < 0 && activeFrame < 0)) {
 		stopReplayIrq();
 		return;
 	}
@@ -186,12 +221,20 @@ void paletteRasterVBlank(void) {
 	stopReplayIrq();
 	return;
 #else
-	activeFrame = readyFrame;
-	readyFrame = -1;
+	if (readyFrame >= 0) {
+		activeFrame = readyFrame;
+		readyFrame = -1;
+	}
 	PaletteDeltaFrame *active = &frames[activeFrame];
+	// Eligibility belongs to the completed frame, not the next live mode.
+	if (!active->replayable) {
+		replayCursor = 0;
+		stopReplayIrq();
+		return;
+	}
 #if PALETTE_RASTER_DIAGNOSTIC == PALETTE_RASTER_BG_ONLY
 	for (unsigned int index = 0; index < WS_BG_COLORS; index++) {
-		BG_PALETTE[index] = active->base[index];
+		BG_PALETTE[index] = mapColor(active->base[index]);
 	}
 #endif
 	replayCursor = 0;
@@ -216,6 +259,10 @@ void paletteRasterVCountIrq(void) {
 	}
 
 	PaletteDeltaFrame *active = &frames[frameIndex];
+	if (!active->replayable) {
+		stopReplayIrq();
+		return;
+	}
 	if (replayCursor >= active->count) {
 		stopReplayIrq();
 		return;
@@ -223,7 +270,7 @@ void paletteRasterVCountIrq(void) {
 	const u8 line = active->delta[replayCursor].line;
 	do {
 		const PaletteDelta *event = &active->delta[replayCursor++];
-		BG_PALETTE[event->index] = event->color;
+		BG_PALETTE[event->index] = mapColor(event->color);
 	} while (replayCursor < active->count && active->delta[replayCursor].line == line);
 
 	if (replayCursor < active->count) {

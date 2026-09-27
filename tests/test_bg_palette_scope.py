@@ -56,8 +56,31 @@ class BgPaletteScope(unittest.TestCase):
         code = (ROOT / "source/Memory.s").read_text(encoding="utf-8")
         hook = code[code.index("paletteRamWriteNotify:"):code.index("cart_WW:")]
         self.assertIn("cmp r0,#0x0FE00000", hook)
-        self.assertIn("stmfd sp!,{r0,r1,lr}", hook)
-        self.assertIn("ldmfd sp!,{r0,r1,pc}", hook)
+        for instruction in ("stmfd sp!,{r0-r2,r4,lr}", "mov r4,sp",
+                            "bic sp,sp,#7", "mov sp,r4", "ldmfd sp!,{r0-r2,r4,pc}"):
+            self.assertIn(instruction, hook)
+
+    def test_lifecycle_hooks_surround_actual_mutation(self):
+        code = (ROOT / "source/WonderSwan.c").read_text(encoding="utf-8")
+        restore = code[code.index("void unpackState"):code.index("int getStateSize")]
+        self.assertLess(restore.index("paletteRasterSuspend()"), restore.index("memcpy(wsRAM"))
+        self.assertGreater(restore.index("paletteRasterConfigure"), restore.index("sphinxLoadState"))
+        self.assertNotIn("stepFrame", restore)
+        for name in ("Main.c", "Gui.c", "FileHandling.c"):
+            code = (ROOT / "source" / name).read_text(encoding="utf-8")
+            for chunk in code.split("loadCart();")[:-1]:
+                self.assertTrue(chunk.rstrip().endswith("paletteRasterSuspend();"))
+
+    def test_mode_eligibility_and_host_abi_wrapper(self):
+        code = (ROOT / "source/PaletteRaster.c").read_text(encoding="utf-8")
+        self.assertIn("(sphinx0.videoMode & 0xC0) == 0xC0", code)
+        self.assertIn("readyFrame < 0 && activeFrame < 0", code)
+        self.assertIn("mapColor(event->color)", code)
+        code = (ROOT / "source/Gfx.s").read_text(encoding="utf-8")
+        hook = code[code.index("wsvVideoRegisterWriteCallback:"):code.index("v30WritePort:")]
+        for instruction in ("stmfd sp!,{r4,lr}", "mov r4,sp", "bic sp,sp,#7",
+                            "bl paletteRasterCaptureRegisterWrite", "mov sp,r4", "ldmfd sp!,{r4,pc}"):
+            self.assertIn(instruction, hook)
 
 
 if __name__ == "__main__":

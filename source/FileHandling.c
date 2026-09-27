@@ -516,6 +516,7 @@ bool loadGame(const char *gameName) {
 
 			setEmuSpeed(0);
 			checkMachine();
+			paletteRasterSuspend();
 			loadCart();
 			paletteRasterConfigure(gGameHeader);
 			setupEmuBackground();
@@ -652,7 +653,9 @@ void selectIPS() {
 	const char *ipsName = browseForFileType(".ips");
 	if (ipsName && patchRom((void *)romSpacePtr, ipsName, gRomSize)) {
 		checkMachine();
+		paletteRasterSuspend();
 		loadCart();
+		paletteRasterConfigure(gGameHeader);
 		setupEmuBackground();
 	}
 	backOutOfMenu();

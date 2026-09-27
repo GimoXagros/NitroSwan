@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
 	bool fsOk = initFileHelper();
 	loadSettings();
 	machineInit();
+	paletteRasterSuspend();
 	loadCart();
 	paletteRasterConfigure(gGameHeader);
 	setupEmuBackground();

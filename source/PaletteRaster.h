@@ -18,7 +18,10 @@ extern "C" {
 #endif
 
 void paletteRasterConfigure(const WsHeader *header);
+// Disable callbacks and discard host captures before guest state is replaced.
+void paletteRasterSuspend(void);
 void paletteRasterCapturePaletteWrite(unsigned int address);
+void paletteRasterCaptureRegisterWrite(unsigned int port);
 void wsvVideoRegisterWriteCallback(unsigned int port);
 void paletteRasterFrameComplete(void);
 void paletteRasterVBlank(void);

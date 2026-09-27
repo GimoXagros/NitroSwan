@@ -666,10 +666,13 @@ gfxRefresh:					;@ Called from C when changing scaling.
 	.type gfxRefresh STT_FUNC
 ;@----------------------------------------------------------------------------
 	adr spxptr,sphinx0
+	stmfd sp!,{lr}				;@ Normalize direct C entry to the nested frame path.
+	bl gfxEndFrame
+	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r8,lr}
+	stmfd sp!,{r4-r9,lr}		;@ Nested entry is 4 mod 8; align the C callback.
 
 	ldr r0,tmpScroll			;@ Destination
 	bl wsvCopyScrollValues
@@ -701,7 +704,7 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	add r1,r1,#1
 	str r1,frameTotal
 
-	ldmfd sp!,{r4-r8,lr}
+	ldmfd sp!,{r4-r9,lr}
 	bx lr
 
 ;@----------------------------------------------------------------------------
@@ -737,6 +740,18 @@ v30ReadPort16:
 ;@----------------------------------------------------------------------------
 	adr spxptr,sphinx0
 	b wsvRead16
+;@----------------------------------------------------------------------------
+	.global wsvVideoRegisterWriteCallback
+wsvVideoRegisterWriteCallback:
+	.type wsvVideoRegisterWriteCallback STT_FUNC
+	;@ Sphinx's byte and word paths can arrive with different SP mod 8.
+	;@ Keep the optional Sphinx hook unchanged; align only this host C entry.
+	stmfd sp!,{r4,lr}
+	mov r4,sp
+	bic sp,sp,#7
+	bl paletteRasterCaptureRegisterWrite
+	mov sp,r4
+	ldmfd sp!,{r4,pc}
 ;@----------------------------------------------------------------------------
 v30WritePort:
 	.type v30WritePort STT_FUNC

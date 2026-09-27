@@ -9,6 +9,7 @@
 #include "Gui.h"
 #include "Cart.h"
 #include "Gfx.h"
+#include "PaletteRaster.h"
 #include "ARMV30MZ/ARMV30MZ.h"
 #include "WSCart/WSCart.h"
 
@@ -26,6 +27,7 @@ int packState(void *statePtr) {
 }
 
 void unpackState(const void *statePtr) {
+	paletteRasterSuspend();
 	int size = 0;
 	memcpy(wsRAM, statePtr+size, sizeof(wsRAM));
 	size += sizeof(wsRAM);
@@ -34,6 +36,9 @@ void unpackState(const void *statePtr) {
 	memcpy(cartSRAM, statePtr+size, sizeof(cartSRAM));
 	size += sizeof(cartSRAM);
 	size += wsEepromLoadState(&cartEeprom, statePtr+size);
+	// Rebuild only the palette, without advancing guest time or publishing OAM.
+	paletteTxAll();
+	paletteRasterConfigure(gGameHeader);
 }
 
 int getStateSize() {

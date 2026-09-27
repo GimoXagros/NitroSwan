@@ -25,6 +25,7 @@ typedef struct {
 	PaletteDelta delta[MAX_BG_PALETTE_DELTAS];
 	u16 count;
 	u16 dropped;
+	bool replayable; // Direct RGB12 indices are valid only for color 4bpp.
 } PaletteDeltaFrame;
 
 static PaletteDeltaFrame frames[PALETTE_FRAME_COUNT];
@@ -52,6 +53,21 @@ static void resetCaptureFrame(PaletteDeltaFrame *frame);
 
 static inline u16 mapColor(u16 rawColor) {
 	return MAPPED_RGB[rawColor & 0x0FFF];
+}
+
+static bool directColorPalette(void) {
+	// Color-capable hardware can still run mono or color 2bpp software.
+	// Those modes use paletteTxAll's grayscale/opaque-entry expansion.
+	return (sphinx0.videoMode & 0xC0) == 0xC0;
+}
+
+static bool canCapturePalette(void) {
+	PaletteDeltaFrame *frame = &frames[captureFrame];
+	if (!directColorPalette()) {
+		frame->replayable = false;
+	}
+	// Once invalidated, a mixed capture falls back until the next BeginFrame.
+	return frame->replayable;
 }
 
 static inline u16 backdropRawColor(const u16 *palette) {
@@ -117,6 +133,7 @@ static void snapshotBase(PaletteDeltaFrame *frame) {
 static void resetCaptureFrame(PaletteDeltaFrame *frame) {
 	frame->count = 0;
 	frame->dropped = 0;
+	frame->replayable = directColorPalette();
 }
 
 static void setBaseColor(PaletteDeltaFrame *frame, unsigned int index, u16 rawColor) {
@@ -145,6 +162,9 @@ static void appendDelta(unsigned int line, unsigned int index, u16 rawColor) {
 }
 
 static void captureBackdropWrite(void) {
+	if (!canCapturePalette()) {
+		return;
+	}
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
 	const u16 backdrop = backdropRawColor(palette);
 	if (backdrop == previousBackdrop) {
@@ -188,6 +208,9 @@ void paletteRasterCapturePaletteWrite(unsigned int address) {
 	if (!wsvVideoWriteCallbackEnabled || address < 0xFE00 || address > 0xFFFF) {
 		return;
 	}
+	if (!canCapturePalette()) {
+		return;
+	}
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
 	const unsigned int index = (address - 0xFE00) >> 1;
 	const u16 rawColor = palette[index];
@@ -219,6 +242,11 @@ void paletteRasterFrameComplete(void) {
 
 	const int finishedFrame = captureFrame;
 	PaletteDeltaFrame *finished = &frames[finishedFrame];
+	if (!canCapturePalette()) {
+		finished->count = 0;
+		finished->dropped = 0;
+	}
+	// Publish even unsupported modes, so they retire any older color replay.
 	paletteRasterEventsFrame = finished->count;
 	paletteRasterDroppedFrame = finished->dropped;
 	if (finished->count > paletteRasterEventsMaximum) {
@@ -270,6 +298,12 @@ void paletteRasterVBlank(void) {
 		readyFrame = -1;
 	}
 	PaletteDeltaFrame *active = &frames[activeFrame];
+	// Use the completed frame's mode, not a subsequent unfinished guest frame.
+	if (!active->replayable) {
+		replayCursor = 0;
+		stopReplayIrq();
+		return;
+	}
 #if PALETTE_RASTER_DIAGNOSTIC == PALETTE_RASTER_BG_ONLY
 	for (unsigned int index = 0; index < WS_BG_COLORS; index++) {
 		BG_PALETTE[index] = mapColor(active->base[index]);
@@ -297,6 +331,10 @@ void paletteRasterVCountIrq(void) {
 	}
 
 	PaletteDeltaFrame *active = &frames[frameIndex];
+	if (!active->replayable) {
+		stopReplayIrq();
+		return;
+	}
 	paletteRasterVCountIrqsFrame++;
 	if (replayCursor >= active->count) {
 		stopReplayIrq();

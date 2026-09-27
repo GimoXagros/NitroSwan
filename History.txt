@@ -1,6 +1,25 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r10 - 2026-09-27 (GimoXagros custom build)
+	Paired visible-frame sprite descriptors with their decoded tiles before the
+	next sprite-table latch can replace them. Retained the guest latch timing.
+	Stopped already-armed renderer HBlank DMA channels 0/3 on quiescence, before
+	ROM replacement/reset can reuse their buffers. Added optional launch markers.
+	Fixed Sphinx 2bpp transparent BG destination offset; kept OBJ bases fixed.
+	Restricted direct RGB12 BG raster replay to eligible completed color-4bpp
+	frames. Mono and color-2bpp retain legacy palette expansion even when Machine
+	is fixed to SwanCrystal/Color. Unsupported frames retire old color events;
+	repeated host refresh still replays the selected completed color frame.
+	The user confirmed the reported One Piece/Digimon character artifacts,
+	Rockman & Forte and BG palette issues resolved on physical hardware, and
+	Digimon -> One Piece -> Dicing Knight ROM switching working normally.
+	Added linked ARM DMA/2bpp/palette-mode regressions: 60 cases per DS/DSi
+	profile including existing renderer/motion coverage; 80 Python and host C
+	RTC/cache checks retained. Updated README, TODO, About, CI and release evidence.
+	No blanket game-compatibility, native timing or measured speedup claim.
+	See Docs/ReleaseValidation-r10.md for tested artifacts and remaining limits.
+
 V0.7.7-custom.r9 - 2026-09-19 (GimoXagros custom prerelease)
 	Fixed the completed OAM DMA source being overwritten by the BG scroll load
 	in vblIrqHandler. Kept the completed pointer in a non-overlapping register.

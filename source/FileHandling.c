@@ -605,10 +605,22 @@ bool loadGame(const char *gameName) {
 			}
 #endif
 
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D4a cache ready", 14, 0);
+#endif
 			setEmuSpeed(0);
 			checkMachine();
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D4b machine ready", 14, 0);
+#endif
 			paletteRasterPrepareStateRestore();
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D4c renderer stopped", 14, 0);
+#endif
 			loadCart();
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D4d cart reset", 14, 0);
+#endif
 			paletteRasterConfigure(gGameHeader);
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
 			drawText("D5 cartridge ready", 15, 0);
@@ -624,8 +636,12 @@ bool loadGame(const char *gameName) {
 			if (emuSettings & AUTOLOAD_STATE) {
 				loadState();
 			}
+#ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D6a state ready", 16, 0);
+#endif
 			cheatsLoad();
 #ifdef DSPICO_LAUNCH_DIAGNOSTIC
+			drawText("D6b cheats ready", 16, 0);
 			drawText("D7 launch", 17, 0);
 			swiWaitForVBlank();
 			swiWaitForVBlank();

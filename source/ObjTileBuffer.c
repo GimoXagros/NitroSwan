@@ -135,6 +135,13 @@ static void seedObjBank(unsigned int sourceOffset, unsigned int destinationOffse
 void objTileBufferQuiesce(void) {
 	const int oldIme = enterCriticalSection();
 	rendererQuiesced = true;
+	// Gating future VBlanks does not stop the repeat HBlank transfers already
+	// armed by vblIrqHandler. Stop scroll/window DMA before resetting buffers;
+	// otherwise their incrementing sources outlive the last published frame.
+	// The SDK helper performs the ARM9 stop sequence from ITCM. Only channels
+	// owned by this renderer are touched, with no file I/O in the critical span.
+	dmaStopSafe(0);
+	dmaStopSafe(3);
 	objSnapshotEnabled = false;
 	readyFrameSlot = -1;
 	pendingFrameSlot = -1;

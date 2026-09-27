@@ -1,5 +1,10 @@
 # Character-motion follow-up candidate (r9)
 
+Historical investigation snapshot. On 2026-09-27 the user confirmed the
+follow-up character, Rockman and palette fixes on hardware and authorized r10.
+See [r10 validation](ReleaseValidation-r10.md) for the current release status;
+the pending labels below describe this document's original investigation stage.
+
 Status: Draft follow-up to GimoXagros/NitroSwan#11, based on its head
 `dffa5d6ac20c99bb27502a0a3d565c1189705ecc`. This is not a release note, stable
 version change, complete character-accuracy claim, or speedup claim. The change

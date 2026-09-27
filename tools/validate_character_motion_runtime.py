@@ -107,7 +107,7 @@ def latch_pairing(path, change=True, mode=0xE0, next_mode=None):
         'expected_tile': expected_tile, 'actual_tile': actual_tile,
         'actual_host_tile_word': hex(arm.read(0x06400000 + actual_tile * 32)),
         'pass': actual_tile == expected_tile,
-        'limit': ('Synthetic OAM content only; existing 2bpp VRAM addressing bug is not fixed.'
+        'limit': ('Synthetic OAM content only; decoded 2bpp bytes are tested by validate_2bpp_runtime.py.'
                   if mode & 0xC0 != 0xC0 else
                   'Synthetic latch and decoded tile content; not a proven game-scene cause.'),
     }

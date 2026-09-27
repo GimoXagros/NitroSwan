@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r8
+# NitroSwan V0.7.7-custom.r9
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -10,12 +10,27 @@ core.
 
 > **Known limitation / 알려진 문제:** One Piece와 Digimon Battle Spirit 계열의
 > 캐릭터 깨짐은 초기 상태보다 크게 개선됐지만, DSpico 실기에서 일부 모션의
-> 잔여 깨짐이 확인되었습니다. r8은 renderer 안전성과 완료 프레임 일관성을
-> 보강하지만 새 실기 장면 검증을 거친 완전 해결판은 아닙니다.
+> 잔여 깨짐이 확인되었습니다. r9는 재현된 전송·팔레트·입력 결함을 수정한
+> **프리릴리즈**이며, 실기 잔상 완전 해결 또는 성능 향상을 보증하지 않습니다.
 > Backgrounds were reported correct against Oswan; the Rockman & Forte background
 > issue was also reported resolved. Some character-motion corruption remains.
 
-## 0.7.7-custom.r8 렌더러 안전성 개선
+## 0.7.7-custom.r9 안정화 프리릴리즈
+
+- VBlank의 스크롤 값 로딩이 완료 OAM 주소를 덮어쓰던 ARM 레지스터 오류를 수정했습니다.
+- 완료된 OBJ 팔레트를 다음 WS 프레임의 작업 버퍼에 쓰지 않고 호스트 팔레트로 게시합니다.
+- 새 WS 프레임이 없는 host refresh에서도 활성 BG 팔레트와 delta 재생을 유지합니다.
+  이벤트가 없으면 VCOUNT IRQ는 계속 비활성입니다.
+- ROM 선택 전이나 reset 중 renderer가 정지되어도 메뉴 입력을 갱신합니다.
+- 링크된 ARM 코드를 실행하는 합성 회귀 검사, 독립 OAM 전송 주소 관측,
+  누락·미측정 trace를 PASS로 판단하지 않는 분석기를 추가했습니다.
+- 새 타이밍 모델이나 추측성 성능 최적화는 추가하지 않았습니다. r8/main과 기존
+  upstream PR은 보존하며, 이 버전은 별도 Draft PR의 후보입니다.
+
+검증 범위·제한과 실기 순서는 [r9 검증 기록](Docs/ReleaseValidation-r9.md),
+감사·계측 근거는 [r8 안정화 기록](Docs/StabilityOptimization-r8.md)을 참고하십시오.
+
+## 0.7.7-custom.r8 렌더러 안전성 개선 (이전 버전)
 
 - ARM assembly에서 C callback으로 진입하는 palette, video-register,
   frame-complete, restore 및 VBlank 경로의 8-byte stack alignment와 register
@@ -94,9 +109,9 @@ CI의 소스/모델 검사와 빌드 성공은 DSpico 실기 또는 native Wonde
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r8.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r9.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r8.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r9.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -221,13 +236,13 @@ BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r8
+make NAME=NitroSwan-DS-0.7.7-custom.r9
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r8 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r9 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
@@ -241,7 +256,7 @@ Korean-patched ROM on DSpico hardware; graphics, speed, sound and input remained
 normal. Mahjong Touryuumon's speed, sound and input were also verified on DSpico
 hardware.
 
-The r8 renderer retains the r7 visual improvements, but residual One Piece/Digimon
+The r9 prerelease retains the r7 visual improvements, but residual One Piece/Digimon
 character-motion corruption remains open. Keep commercial ROMs, external BIOS
 dumps and saves local-only in `.local-test-assets/`; never attach them to PRs,
 Actions artifacts or releases. Existing fonts and replacement IPL assets are

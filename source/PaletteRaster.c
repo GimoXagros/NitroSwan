@@ -17,7 +17,7 @@
 typedef struct {
 	u8 line;
 	u8 index;
-	u16 color;
+	u16 color; // Raw guest RGB12; map at replay so paused host remaps stay valid.
 } PaletteDelta;
 
 typedef struct {
@@ -106,11 +106,11 @@ static void resumeRaster(const WsHeader *header, bool resetMetrics) {
 static void snapshotBase(PaletteDeltaFrame *frame) {
 	const u16 *palette = (const u16 *)sphinx0.paletteRAM;
 	previousBackdrop = backdropRawColor(palette);
-	frame->base[0] = mapColor(previousBackdrop);
+	frame->base[0] = previousBackdrop & 0x0FFF;
 	for (unsigned int index = 1; index < WS_BG_COLORS; index++) {
 		const u16 rawColor = palette[index];
 		previousPalette[index] = rawColor;
-		frame->base[index] = mapColor(rawColor);
+		frame->base[index] = rawColor & 0x0FFF;
 	}
 }
 
@@ -121,13 +121,13 @@ static void resetCaptureFrame(PaletteDeltaFrame *frame) {
 
 static void setBaseColor(PaletteDeltaFrame *frame, unsigned int index, u16 rawColor) {
 	if (index < WS_BG_COLORS) {
-		frame->base[index] = mapColor(rawColor);
+		frame->base[index] = rawColor & 0x0FFF;
 	}
 }
 
 static void appendDelta(unsigned int line, unsigned int index, u16 rawColor) {
 	PaletteDeltaFrame *frame = &frames[captureFrame];
-	const u16 color = mapColor(rawColor);
+	const u16 color = rawColor & 0x0FFF;
 	for (int event = frame->count - 1;
 		event >= 0 && frame->delta[event].line == line; event--) {
 		if (frame->delta[event].index == index) {
@@ -254,7 +254,7 @@ void paletteRasterVBlank(void) {
 		paletteRasterVCountIrqsMaximum = paletteRasterVCountIrqsFrame;
 	}
 	paletteRasterVCountIrqsFrame = 0;
-	if (!rasterEnabled || readyFrame < 0) {
+	if (!rasterEnabled || (readyFrame < 0 && activeFrame < 0)) {
 		stopReplayIrq();
 		return;
 	}
@@ -263,12 +263,16 @@ void paletteRasterVBlank(void) {
 	stopReplayIrq();
 	return;
 #else
-	activeFrame = readyFrame;
-	readyFrame = -1;
+	// A host refresh without a new WS completion still displays the active
+	// frame. Its base and deltas must be replayed after the host palette DMA.
+	if (readyFrame >= 0) {
+		activeFrame = readyFrame;
+		readyFrame = -1;
+	}
 	PaletteDeltaFrame *active = &frames[activeFrame];
 #if PALETTE_RASTER_DIAGNOSTIC == PALETTE_RASTER_BG_ONLY
 	for (unsigned int index = 0; index < WS_BG_COLORS; index++) {
-		BG_PALETTE[index] = active->base[index];
+		BG_PALETTE[index] = mapColor(active->base[index]);
 	}
 #endif
 	replayCursor = 0;
@@ -301,7 +305,7 @@ void paletteRasterVCountIrq(void) {
 	const u8 line = active->delta[replayCursor].line;
 	do {
 		const PaletteDelta *event = &active->delta[replayCursor++];
-		BG_PALETTE[event->index] = event->color;
+		BG_PALETTE[event->index] = mapColor(event->color);
 	} while (replayCursor < active->count && active->delta[replayCursor].line == line);
 
 	if (replayCursor < active->count) {

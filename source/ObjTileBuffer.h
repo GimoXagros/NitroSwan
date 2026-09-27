@@ -15,6 +15,7 @@ void videoTileBufferFrameComplete(const void *completedOam);
 void videoTileBufferFrameCommit(void);
 bool videoTileBufferIsQuiesced(void);
 const void *videoTileBufferVBlank(void);
+void videoTileBufferPublishPalette(void);
 
 extern volatile u16 wsvObjTileOffset;
 extern volatile u16 wsvObjReadyTileOffset;
@@ -39,6 +40,7 @@ extern volatile u32 bgBufferSwapCount;
 #ifdef WSC_VIDEO_TRACE
 typedef struct {
 	u32 completedFrameGeneration;
+	u32 observedOamFrame;
 	u32 objBuildGeneration;
 	u32 readyFrameGeneration;
 	u32 readyTileGeneration;

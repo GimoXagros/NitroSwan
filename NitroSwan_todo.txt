@@ -1,4 +1,16 @@
-NitroSwan Todo — current release v0.7.7-custom.r8
+NitroSwan Todo — candidate prerelease v0.7.7-custom.r9; stable main/release r8
+2026-09-19 candidate update: four reproduced publication/input defects corrected;
+linked ARM regressions added. Residual One Piece/Digimon motion remains OPEN.
+See Docs/ReleaseValidation-r9.md and Docs/StabilityOptimization-r8.md.
+Next gates, in order:
+  P0 / Medium: DSpico A/B r8 vs r9, One Piece J/K and Battle Spirit 1.0/1.5/Frontier.
+  P0 / Very high: scene-aligned latch/OAM/tile/palette first-divergence capture.
+  P1 / High: full reset/ROM replacement/save-load/LCD/BIOS mode matrix on hardware.
+  P1 / Medium: paired hardware timing, ROM-cache and audio/save metrics; optimize
+               only after measuring. Diagnostic timer ticks are not guest cycles.
+No CPU/latch timing changes or upstream #59/#60 mutations were made in r9.
+
+Historical r8 status (not new r9 test results):
 Release snapshot: 2026-09-05. The r7 baseline audit is in
 Docs/BaselineAudit-r7.md; the shipped A2-A4 safety work is documented in
 Docs/RendererSafety-r7.md and Docs/ReleaseValidation-r8.md. ARM runtime,

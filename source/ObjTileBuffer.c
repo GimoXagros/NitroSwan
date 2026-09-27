@@ -5,6 +5,9 @@
 #include "Gfx.h"
 #include "ObjTileBuffer.h"
 #include "PaletteRaster.h"
+#ifdef WSC_VIDEO_TRACE
+#include "RendererTrace.h"
+#endif
 
 #define OBJ_TILE_COUNT 512
 #define OBJ_TILE_BYTES 32
@@ -31,6 +34,8 @@ typedef struct {
 typedef struct {
 	CompletedFrameDescriptor descriptor;
 	u8 oam[OAM_SNAPSHOT_BYTES];
+	// Retain raw guest colors in the existing 512-byte slot. Only guest entries
+	// 128..255 are OBJ colors; mapping at publication also handles paused gamma.
 	u16 objPalette[OBJ_PALETTE_BYTES / sizeof(u16)];
 } CompletedFrameSlot;
 
@@ -141,6 +146,9 @@ void objTileBufferQuiesce(void) {
 
 void objTileBufferReset(void) {
 	objTileBufferQuiesce();
+#ifdef WSC_VIDEO_TRACE
+	rendererTraceReset();
+#endif
 	wsvObjTileOffset = 0;
 	wsvObjReadyTileOffset = 0;
 	wsvBgTileOffset = 0;
@@ -263,7 +271,7 @@ void videoTileBufferFrameComplete(const void *completedOam) {
 		.objSnapshotEnabled = objSnapshotEnabled,
 	};
 	if (objSnapshotEnabled) {
-		memcpy(slot->objPalette, EMUPALBUFF + 0x100,
+		memcpy(slot->objPalette, sphinx0.paletteRAM,
 			OBJ_PALETTE_BYTES);
 		if (objTilesConvertedWSFrame == 0) {
 			skippedCleanGenerationCount++;
@@ -291,6 +299,10 @@ void videoTileBufferFrameCommit(void) {
 	pendingFrameSlot = -1;
 	paletteRasterCommitFrame();
 	rendererQuiesced = false;
+#ifdef WSC_VIDEO_TRACE
+	// Observe ready metadata before an IRQ can consume it (not after BeginFrame).
+	rendererTraceWSFrame();
+#endif
 	leaveCriticalSection(oldIme);
 }
 
@@ -319,8 +331,6 @@ const void *videoTileBufferVBlank(void) {
 				addObjTransferBytes(OBJ_BANK_BYTES);
 				publishedTileGeneration = completed.tileGeneration;
 			}
-			memcpy(EMUPALBUFF + 0x100, slot->objPalette,
-				OBJ_PALETTE_BYTES);
 		}
 		publishedOamSource = slot->oam;
 		publishedFrameGeneration = completed.frameGeneration;
@@ -336,14 +346,36 @@ const void *videoTileBufferVBlank(void) {
 	return publishedOamSource;
 }
 
+void videoTileBufferPublishPalette(void) {
+	// Called in VBlank AFTER the legacy palette DMA. Never write back into
+	// EMUPALBUFF: the interrupted WS frame may be converting its palette there.
+	if (activeFrameSlot >= 0) {
+		const CompletedFrameSlot *slot = &completedSlots[activeFrameSlot];
+		if (slot->descriptor.objSnapshotEnabled) {
+			// WSC OBJ palette field is three bits (8 x 16 colors). Preserve the
+			// unused upper DS OBJ palette half, just as paletteTxAll does in 4bpp.
+			for (unsigned int index = 0; index < 128; index++) {
+				SPRITE_PALETTE[index] = MAPPED_RGB[slot->objPalette[128 + index] & 0x0FFF];
+			}
+		}
+	}
+}
+
 #ifdef WSC_VIDEO_TRACE
 void objTileBufferGetTraceState(ObjTileTraceState *state) {
+	u32 observedOamFrame = 0xFFFFFFFF;
+	for (unsigned int i = 0; i < 3; i++) {
+		if (rendererTraceOamSource == completedSlots[i].oam) {
+			observedOamFrame = completedSlots[i].descriptor.frameGeneration;
+		}
+	}
 	const CompletedFrameDescriptor *ready = readyFrameSlot >= 0
 		? &completedSlots[readyFrameSlot].descriptor : NULL;
 	const CompletedFrameDescriptor *active = activeFrameSlot >= 0
 		? &completedSlots[activeFrameSlot].descriptor : NULL;
 	*state = (ObjTileTraceState){
 		.completedFrameGeneration = completedFrameGeneration,
+		.observedOamFrame = observedOamFrame,
 		.objBuildGeneration = objBuildGeneration,
 		.readyFrameGeneration = ready ? ready->frameGeneration : 0,
 		.readyTileGeneration = ready ? ready->tileGeneration : 0,

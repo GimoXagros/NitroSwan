@@ -49,6 +49,7 @@ void paletteTxAll(void);
 void shutDownLCD(void);
 void updateLCDRefresh(void);
 void gfxRefresh(void);
+void gfxPrepareSprites(void);
 void gfxRebuildRendererState(void);
 u8 v30ReadPort(u16 port);
 u16 v30ReadPort16(u16 port);

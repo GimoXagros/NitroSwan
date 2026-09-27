@@ -106,6 +106,8 @@ def oam_source(path, scroll, completed):
 def palette_repeat(path, events):
     arm = ArmImage(path)
     arm.set('rasterEnabled', 1, 1)
+    arm.write(arm.address('sphinx0') + arm.address('wsvVideoMode'), 0xC0, 1)
+    arm.call('paletteRasterBeginFrame')
     arm.set('readyFrame', 0)
     arm.set('activeFrame', -1)
     frame = arm.address('frames')
@@ -197,6 +199,7 @@ def host_color_refresh(path):
     arm.call('objTileBufferReset')
     arm.call('objTileBufferCompleteStateRestore', 0xC0)
     arm.set('gSOC', 1, 1)
+    arm.write(arm.address('sphinx0') + arm.address('wsvVideoMode'), 0xC0, 1)
     arm.write(arm.SCRATCH + 0x3000 + 2, 0x12, 2)
     arm.write(arm.SCRATCH + 0x3000 + 256, 0x12, 2)
     arm.write(arm.address('MAPPED_RGB') + 0x12 * 2, 0x1234, 2)

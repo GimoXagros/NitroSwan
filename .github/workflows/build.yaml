@@ -41,43 +41,65 @@ jobs:
         run: python3 tools/run_core_regressions.py
 
       - name: Build DS version
-        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r9
+        run: make -j2 NAME=NitroSwan-DS-0.7.7-custom.r10
 
       - name: Build DSi/DSpico version
         run: |
-          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r9 DSPICO_3DS_BUILD=1 \
+          make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r10 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 
       - name: Validate linked renderer ABI
         run: |
           python3 tools/validate_renderer_abi.py \
-            --build-dir build/NitroSwan-DS-0.7.7-custom.r9 \
+            --build-dir build/NitroSwan-DS-0.7.7-custom.r10 \
             --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
           python3 tools/validate_renderer_abi.py \
-            --build-dir build/NitroSwan-DSi-0.7.7-custom.r9 \
+            --build-dir build/NitroSwan-DSi-0.7.7-custom.r10 \
             --objdump /opt/wonderful/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-objdump
 
       - name: Execute linked ARM renderer regressions
         run: |
-          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DS-0.7.7-custom.r9.elf
-          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DSi-0.7.7-custom.r9.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DS-0.7.7-custom.r10.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_renderer_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
+
+      - name: Execute linked ARM sprite visibility regressions
+        run: |
+          /tmp/nitroswan-validation/bin/python tools/validate_character_motion_runtime.py build/NitroSwan-DS-0.7.7-custom.r10.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_character_motion_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
+
+      - name: Execute linked ARM DMA quiescence regressions
+        run: |
+          /tmp/nitroswan-validation/bin/python tools/validate_quiesce_dma_runtime.py build/NitroSwan-DS-0.7.7-custom.r10.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_quiesce_dma_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
+
+      - name: Execute linked ARM 2bpp destination regressions
+        run: |
+          /tmp/nitroswan-validation/bin/python tools/validate_2bpp_runtime.py build/NitroSwan-DS-0.7.7-custom.r10.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_2bpp_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
+
+      - name: Execute linked ARM palette mode regressions
+        run: |
+          /tmp/nitroswan-validation/bin/python tools/validate_palette_mode_runtime.py build/NitroSwan-DS-0.7.7-custom.r10.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_palette_mode_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
 
       - name: Validate executable headers and embedded banners
         run: |
-          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r9.nds \
-            --dsi NitroSwan-DSi-0.7.7-custom.r9.nds
+          python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r10.nds \
+            --dsi NitroSwan-DSi-0.7.7-custom.r10.nds
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: NitroSwan-0.7.7-custom.r9
+          name: NitroSwan-0.7.7-custom.r10
           path: |
             History.txt
-            NitroSwan-DS-0.7.7-custom.r9.nds
-            NitroSwan-DSi-0.7.7-custom.r9.nds
+            NitroSwan-DS-0.7.7-custom.r10.nds
+            NitroSwan-DSi-0.7.7-custom.r10.nds
             README.md
             WonderWitch.md
             NitroSwan_todo.txt
             Docs/ReleaseValidation-r8.md
             Docs/StabilityOptimization-r8.md
             Docs/ReleaseValidation-r9.md
+            Docs/CharacterMotion-r9.md
+            Docs/ReleaseValidation-r10.md

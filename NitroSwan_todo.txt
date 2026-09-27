@@ -1,7 +1,38 @@
-NitroSwan Todo — candidate prerelease v0.7.7-custom.r9; stable main/release r8
+NitroSwan Todo — v0.7.7-custom.r10 (2026-09-27)
+
+Current result: user hardware verification confirms the reported character
+motion/trail, Rockman & Forte and background palette defects resolved.
+Digimon -> One Piece -> Dicing Knight switching was also reported working.
+See Docs/ReleaseValidation-r10.md for candidate/final-build evidence boundaries.
+PR #11/#12 are integrated into main for r10; historical releases are preserved.
+
+Next priorities (estimates, not delivery promises):
+  P1 / High: isolate the independent BG active-bank lifetime counterexample
+             with several guest frames before host VBlank; confirm game impact.
+  P1 / High: full reset/ROM-switch/failing-ROM-load/save-load/BIOS/LCD matrix,
+             including safe behavior after partially failed ROM reads.
+  P1 / Medium: retain tested Rockman Crystal/Auto, One Piece sky/motion and
+               Digimon scenes as controls; expand to J/K and all Battle Spirit
+               variants without assuming the tested report covers every ROM.
+  P1 / Medium: measure paired frame pacing, audio, palette event loss and copy
+               costs before accepting any performance optimization.
+  P2 / High: other BG raster games and unobserved transient video-mode changes;
+             mixed-mode per-scanline raster remains unsupported.
+  P2 / High-very high: 4-color 1024-tile maps, sprite windows and OBJ/FG priority.
+  P2 / Very high: native V30MZ prefetch/timing evidence; no speculative CPU change.
+  P3 / Mixed: remaining sound, serial, GUI and peripheral features below.
+
+The previously reported P0 motion defect is closed for the user's tested scenes,
+not a claim of complete OBJ correctness or whole-library compatibility.
+No native WonderSwan certification, new speedup or complete save matrix claimed.
+
+Historical r9/r8 backlog snapshot follows (superseded where stated above):
+Candidate prerelease v0.7.7-custom.r9; then-stable main/release r8
 2026-09-19 candidate update: four reproduced publication/input defects corrected;
 linked ARM regressions added. Residual One Piece/Digimon motion remains OPEN.
 See Docs/ReleaseValidation-r9.md and Docs/StabilityOptimization-r8.md.
+Separate character-motion follow-up candidate: Docs/CharacterMotion-r9.md;
+synthetic linked-ARM regression passes, but actual game-scene A/B remains pending.
 Next gates, in order:
   P0 / Medium: DSpico A/B r8 vs r9, One Piece J/K and Battle Spirit 1.0/1.5/Frontier.
   P0 / Very high: scene-aligned latch/OAM/tile/palette first-divergence capture.

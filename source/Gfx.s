@@ -30,6 +30,7 @@
 	.global paletteInit
 	.global paletteTxAll
 	.global gfxRefresh
+	.global gfxPrepareSprites
 	.global gfxRebuildRendererState
 	.global gfxEndFrame
 	.global vblIrqHandler
@@ -673,8 +674,18 @@ gfxRefresh:					;@ Called from C when changing scaling.
 ;@----------------------------------------------------------------------------
 	adr spxptr,sphinx0
 	stmfd sp!,{lr}				;@ Normalize direct C entry to nested SP mod 8.
+	bl gfxPrepareSprites		;@ Explicit live refresh must fill the current temp buffer.
 	bl gfxEndFrame
 	ldmfd sp!,{pc}
+;@----------------------------------------------------------------------------
+gfxPrepareSprites:			;@ C entry: capture the latch visible at frame start.
+	.type gfxPrepareSprites STT_FUNC
+;@----------------------------------------------------------------------------
+	stmfd sp!,{r4,lr}
+	ldr spxptr,=sphinx0
+	ldr r0,tmpOamBuffer
+	bl wsvConvertSprites
+	ldmfd sp!,{r4,pc}
 ;@----------------------------------------------------------------------------
 gfxRebuildRendererState:		;@ Rebuild restored host state without advancing WS time.
 	.type gfxRebuildRendererState STT_FUNC
@@ -701,6 +712,9 @@ gfxRebuildRendererState:		;@ Rebuild restored host state without advancing WS ti
 	ldmia r0,{r1-r8,lr}
 	stmia r0!,{r7,r8,lr}
 	stmia r0,{r1-r6}
+	;@ Restore can resume after line zero. Seed the newly rotated build OAM now,
+	;@ while the restored latch is intact, before any later sprite-table latch.
+	bl gfxPrepareSprites
 	ldmfd sp!,{r4-r10,pc}
 ;@----------------------------------------------------------------------------
 gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
@@ -711,8 +725,8 @@ gfxEndFrame:				;@ Called just after screen end (line 144)	(r0-r3 safe to use)
 	bl wsvCopyScrollValues
 	ldr r0,tmpWinInOut			;@ Destination
 	bl copyWindowValues
-	ldr r0,tmpOamBuffer			;@ Destination
-	bl wsvConvertSprites
+	;@ OAM was prepared with line-zero tiles before this frame's sprite latch.
+	;@ The newly latched table belongs to the next visible frame.
 
 	bl paletteTxAll
 	ldr r0,tmpOamBuffer			;@ Pair this completed OAM with its tile bank.

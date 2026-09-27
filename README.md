@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r9
+# NitroSwan V0.7.7-custom.r10
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -8,14 +8,32 @@ Nintendo 3DS DSpico/DSi profile, English/Japanese/Korean menus, multilingual
 filenames, per-game RAM cheats, and accuracy fixes based on the upstream 0.7.7
 core.
 
-> **Known limitation / 알려진 문제:** One Piece와 Digimon Battle Spirit 계열의
-> 캐릭터 깨짐은 초기 상태보다 크게 개선됐지만, DSpico 실기에서 일부 모션의
-> 잔여 깨짐이 확인되었습니다. r9는 재현된 전송·팔레트·입력 결함을 수정한
-> **프리릴리즈**이며, 실기 잔상 완전 해결 또는 성능 향상을 보증하지 않습니다.
-> Backgrounds were reported correct against Oswan; the Rockman & Forte background
-> issue was also reported resolved. Some character-motion corruption remains.
+> **r10 실기 확인:** 사용자가 One Piece/Digimon의 캐릭터 잔상·깨짐,
+> 록맨&포르테 및 배경 팔레트 문제가 해결되었음을 확인했습니다.
+> 이는 보고된 테스트 장면의 결과이며 모든 게임·모드의 완전한 정확성이나
+> 성능 향상을 보증하지 않습니다. 검증 범위와 남은 제한은
+> [r10 검증 기록](Docs/ReleaseValidation-r10.md)을 참고하십시오.
 
-## 0.7.7-custom.r9 안정화 프리릴리즈
+## 0.7.7-custom.r10 렌더링 및 ROM 전환 수정
+
+- 보이는 프레임의 sprite descriptor와 타일을 짝지어 OAM을 준비하도록 수정해,
+  다음 프레임의 sprite-table latch가 현재 캐릭터에 섞이지 않게 했습니다.
+- ROM 교체·reset 시 이미 동작 중인 scroll/window HBlank DMA 0/3도 안전하게
+  정지합니다. 사용자가 `디지몬 → 원피스 → 다이싱 나이트` 전환을 확인했습니다.
+- Sphinx의 2bpp 변환에서 BG 뱅크 오프셋이 OBJ 목적지에 적용되던 주소 오류를
+  수정했습니다. transparent BG와 opaque BG 목적지를 구분합니다.
+- SwanCrystal/Color 기종에서도 실제 표시 모드가 흑백 또는 컬러 2bpp라면
+  기존 팔레트 변환을 유지합니다. 컬러 4bpp raster의 완료 프레임별 재생은
+  유지하며, 이전 컬러 프레임의 이벤트가 새 흑백 화면에 남지 않게 했습니다.
+- DS·DSi 각각 60개 linked-ARM 회귀 검사, 80개 Python 검사 및 host C 검사를
+  통과했습니다. About·CI·배포 파일명을 r10으로 맞췄습니다.
+
+릴리즈는 [PR #11](https://github.com/GimoXagros/NitroSwan/pull/11)과
+[PR #12](https://github.com/GimoXagros/NitroSwan/pull/12)를 반영한 `main`에서
+배포합니다. 기존 r8/r9 태그와 배포 파일은 비교·복구용으로 유지합니다.
+CPU/native timing 모델, 게임별 whitelist, 저장 형식은 변경하지 않았습니다.
+
+## 0.7.7-custom.r9 안정화 프리릴리즈 (이전 버전)
 
 - VBlank의 스크롤 값 로딩이 완료 OAM 주소를 덮어쓰던 ARM 레지스터 오류를 수정했습니다.
 - 완료된 OBJ 팔레트를 다음 WS 프레임의 작업 버퍼에 쓰지 않고 호스트 팔레트로 게시합니다.
@@ -29,6 +47,9 @@ core.
 
 검증 범위·제한과 실기 순서는 [r9 검증 기록](Docs/ReleaseValidation-r9.md),
 감사·계측 근거는 [r8 안정화 기록](Docs/StabilityOptimization-r8.md)을 참고하십시오.
+당시 캐릭터 모션 후속 후보의 분석은
+[Character Motion r9](Docs/CharacterMotion-r9.md)에 보존합니다.
+후속 실기 확인과 배포 결과는 위 r10 기록을 기준으로 합니다.
 
 ## 0.7.7-custom.r8 렌더러 안전성 개선 (이전 버전)
 
@@ -102,16 +123,16 @@ CI의 소스/모델 검사와 빌드 성공은 DSpico 실기 또는 native Wonde
 - `From TV Animation One Piece - Grand Battle Swan Colosseum`의 전투 하늘은
   background-color/palette RAM write-time event로 복원합니다. r7에서는 이를
   특정 게임 전용 경로가 아닌 공통 컬러 하드웨어 경로로 확장했습니다.
-  캐릭터 그래픽에는 위에 명시한 잔여 모션 깨짐이 있습니다.
+  r10에서는 보고된 캐릭터 모션 문제도 사용자의 실기 검사에서 해결되었습니다.
 - `Mahjong Touryuumon`이 사용하는 `$A0` cartridge ROM opcode/immediate-fetch
   waitstate를 반영했습니다. 속도·사운드·입력은 DSpico 실기에서 정상 동작을
   확인했습니다.
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r9.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r10.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r9.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r10.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -236,13 +257,13 @@ BlocksDS is required. Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r9
+make NAME=NitroSwan-DS-0.7.7-custom.r10
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r9 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r10 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
@@ -256,8 +277,8 @@ Korean-patched ROM on DSpico hardware; graphics, speed, sound and input remained
 normal. Mahjong Touryuumon's speed, sound and input were also verified on DSpico
 hardware.
 
-The r9 prerelease retains the r7 visual improvements, but residual One Piece/Digimon
-character-motion corruption remains open. Keep commercial ROMs, external BIOS
+The r10 release includes the user-verified character-motion and Rockman palette
+corrections; untested scenes/modes remain outside that result. Keep commercial ROMs, external BIOS
 dumps and saves local-only in `.local-test-assets/`; never attach them to PRs,
 Actions artifacts or releases. Existing fonts and replacement IPL assets are
 legitimate tracked build inputs, not private test dumps.

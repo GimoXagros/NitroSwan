@@ -210,7 +210,10 @@ class GraphicsCoreTests(unittest.TestCase):
         self.assertIn("bl dmaSprites", video[video.index("latchSpritesForFrame:"):video.index("endFrame:")])
         new_frame = video[video.index("newFrame:"):video.index("latchSpritesForFrame:")]
         self.assertLess(new_frame.index("bl objTileBufferBeginFrame"), new_frame.index("b drawFrameGfx"))
-        self.assertEqual(frame.count("bl wsvConvertSprites"), 1)
+        self.assertEqual(frame.count("bl wsvConvertSprites"), 0)
+        self.assertIn("gfxPrepareSprites();", obj)
+        prepare = gfx[gfx.index("gfxPrepareSprites:"):gfx.index("gfxRebuildRendererState:")]
+        self.assertIn("bl wsvConvertSprites", prepare)
         self.assertNotIn("bl wsvConvertTileMaps", frame)
         self.assertIn("bl videoTileBufferFrameComplete", frame)
         vblank = gfx[gfx.index("vblIrqHandler:"):gfx.index("copyWindowValues:")]

@@ -26,131 +26,32 @@ The previously reported P0 motion defect is closed for the user's tested scenes,
 not a claim of complete OBJ correctness or whole-library compatibility.
 No native WonderSwan certification, new speedup or complete save matrix claimed.
 
-Historical r9/r8 backlog snapshot follows (superseded where stated above):
-Candidate prerelease v0.7.7-custom.r9; then-stable main/release r8
-2026-09-19 candidate update: four reproduced publication/input defects corrected;
-linked ARM regressions added. Residual One Piece/Digimon motion remains OPEN.
-See Docs/ReleaseValidation-r9.md and Docs/StabilityOptimization-r8.md.
-Separate character-motion follow-up candidate: Docs/CharacterMotion-r9.md;
-synthetic linked-ARM regression passes, but actual game-scene A/B remains pending.
-Next gates, in order:
-  P0 / Medium: DSpico A/B r8 vs r9, One Piece J/K and Battle Spirit 1.0/1.5/Frontier.
-  P0 / Very high: scene-aligned latch/OAM/tile/palette first-divergence capture.
-  P1 / High: full reset/ROM replacement/save-load/LCD/BIOS mode matrix on hardware.
-  P1 / Medium: paired hardware timing, ROM-cache and audio/save metrics; optimize
-               only after measuring. Diagnostic timer ticks are not guest cycles.
-No CPU/latch timing changes or upstream #59/#60 mutations were made in r9.
+Additional tracked limitations:
+  P2 / Medium-high: Debug Step Frame ARM-to-C stack alignment (present since r8).
+                    Keep separate from normal gameplay; avoid until corrected.
+  Historical reports awaiting a current controlled reproduction:
+    Anode/Cathode battle gradients; Final Lap 2000/Special road palettes;
+    Hataraku Chocobo transitions; Cardcaptor Sakura and Mr. Driller timing;
+    Final Fantasy, Makaimura, Evangelion and Romancing Sa-Ga sprite windows.
+  Dicing Knight shadows/OBJ-FG priority remain a separate issue.
+  Historical slowness reports are not current measurements or proven regressions.
 
-Historical r8 status (not new r9 test results):
-Release snapshot: 2026-09-05. The r7 baseline audit is in
-Docs/BaselineAudit-r7.md; the shipped A2-A4 safety work is documented in
-Docs/RendererSafety-r7.md and Docs/ReleaseValidation-r8.md. ARM runtime,
-fresh melonDS scene and DSpico validation remain pending, so r8 is not a claim
-that the residual character-motion defect is completely fixed.
+Regression controls:
+  * User-confirmed r10 candidate: reported One Piece/Digimon motion artifacts,
+    Rockman & Forte and background palettes; Digimon -> One Piece -> Dicing Knight.
+  * Mahjong Touryuumon: prior DSpico speed/sound/input confirmation retained.
+  * Broader ROM variants, full save/BIOS/LCD combinations and native WS timing
+    are not certified by these reports. See Docs/ReleaseValidation-r10.md.
+  * Source/model tests, linked ARM synthetic tests, emulator scenes and user
+    hardware reports are distinct evidence levels, not interchangeable PASSes.
 
-1. Current release status
-   * r8 retains the generic r7 video behavior and adds renderer ABI, lifecycle
-     and completed-frame publication safety. Diagnostic trace/self-test code is
-     compile-time disabled in the normal release binaries.
-   * DSpico-tested by the user: substantially improved character motion, but
-     still open in current r8. No full OBJ-correctness claim.
-   * User Oswan comparison: BGs correct; Rockman & Forte BG issue reported
-     resolved during r7 testing. Preserve those scenes as regression controls.
-   * CI/source-model checks/builds are not DSpico or native WonderSwan tests.
-   * The r8 release aligns the reviewed ARM/C callback paths,
-     coordinates restore/reset and atomically publishes completed OBJ/OAM/BG/
-     palette ownership. It passed automated CI/build validation but has not had
-     a fresh DSpico gameplay certification.
+Older r7-r9 backlog snapshots remain in Git at v0.7.7-custom.r10:NitroSwan_todo.txt
+and in Docs/BaselineAudit-r7.md, Docs/StabilityOptimization-r8.md and the dated
+ReleaseValidation documents. They are not duplicate current P0 tickets.
+2026-10-02 repository maintenance changes documentation only; no new game tests,
+runtime changes or release binaries. See Docs/RepositoryMaintenance-r10.md.
 
-2. Highest-priority open defect
-   P0 / Very high: remaining character-motion corruption in One Piece original
-   and patched variants, Digimon Battle Spirit 1.0 / 1.5 / Frontier.
-   "Fixed in r6 title-specific path" is historical validation; "improved in r7
-   generic renderer" and "still open in current r8" describe the present.
-   No new attempt to solve this defect is part of the baseline maintenance.
-
-3. Next work order (difficulty estimates, not delivery promises)
-   0. Safety prerequisite / High: execute the prepared ARM ABI sentinel and
-      reset/save/load smoke, then complete fresh melonDS and DSpico scene tests
-      for the shipped A2-A4 changes. Keep active PR branches and prior assets intact.
-   1. P0 / Very high: capture OAM, decoded OBJ, sprite latch, palette and host
-      VBlank generations together in the reproducible character-motion scenes.
-      First prove or reject the suspected ownership cause; do not change the
-      working BG path, sprite timing or copy count on a source-model guess.
-   2. P1 / Medium: collect paired generation traces with `objSeedBytesFrame`,
-      `objPublishBytesHostFrame`, `objTotalBytes`, publication/clean-generation
-      counts, palette drops, frame pacing, sound, input and saves.
-   3. P1 / High: BG raster validation in Anode/Cathode battles, Final Lap
-      2000/Special roads and Hataraku Chocobo transitions. Reproduce before
-      fixing. Keep NitroSwan #59 / Sphinx #4 minimal and BG-only.
-   4. P2 / Medium-high: 4-color 1024-tile maps (Sorobang, WSC BIOS).
-   5. P2 / Very high: sprite-window edge clipping (Final Fantasy, Makaimura,
-      Evangelion, Romancing Sa-Ga); Dicing Knight priority is a separate issue.
-   6. P2 / Very high, hardware-dependent: native opcode-fetch timing vectors
-      and proper V30MZ prefetch/refill for #60 / Sphinx #5 / ARMV30MZ #6.
-      The shipped per-byte candidate is not an accepted prefetch model.
-   7. P3 / High-very high: sound frequency/sweep/noise/LFSR/HyperVoice stereo.
-   8. P3 / Very high: interruptible REP preserving flags, cycles and cache.
-   9. P3 / Mixed: serial debug (low-medium), WSC high/low contrast and
-      alternating Y (medium-high), mono 4-color mode (high), GUI cart jumper,
-      and separately justified refactors. Do not mix these into OBJ work.
-   Recommendation: safety prerequisite, then 1 with diagnostic parts of 2,
-   then 3 and 4. No future feature branch is created by this audit.
-
-4. Current validation gaps
-   * tests/test_graphics_core.py is source-contract/Python model evidence.
-     It does not simulate arbitrary IRQ scheduling or prove pixel correctness.
-   * Some audit tests deliberately demonstrate OLD/OPEN counterexamples:
-     their success means the counterexample is reproduced, not safety passed.
-   * Fresh emulator and DSpico scene/performance checks for maintenance changes
-     are pending; historical r6/r7 runs must not be relabelled as fresh passes.
-   * Native WonderSwan prefetch/scanline vectors pending; DSpico is not native WS.
-   * Mode transitions and generation wrap have automated lifecycle models, but
-     mono/color, packed/planar, LCD, BIOS, reset/replacement and save-state
-     restore still need interrupt-aware emulator/hardware execution.
-   * The candidate separates WS seed and host publication clocks; real-scene
-     transfer traces and palette overflow behavior still need collection.
-   * Clean builds verify assembly/link/package, not game compatibility.
-
-5. Known game issues and retained regression controls
-   OPEN:
-   * One Piece original/patched and Battle Spirit 1.0/1.5/Frontier: P0 above.
-   * Dicing Knight: shadows in front of player (OBJ/FG priority).
-   * Anode/Cathode: historical missing battle gradients, generic r7 recheck pending.
-   * Final Lap 2000/Special: historical road palette issue, generic recheck pending.
-   * Hataraku Chocobo: map-transition BG raster validation pending.
-   * Final Fantasy: dialog sprite windows.
-   * Makaimura: intro right edge / first-boss sprites (window, further cause open).
-   * Evangelion and Romancing Sa-Ga: overlapping sprites/window priority.
-   * Sorobang and WSC BIOS: need 1024 tiles in 4-color mode.
-   * Cardcaptor Sakura and Mr. Driller: timing-sensitive.
-   * Dekadence - Vesilintu, Mingle Magnet, Nazo Ou Pocket, Puyo Puyo Tsuu,
-     Side Pocket, Time Bokan: historical slowness reports; no fresh r7 benchmark.
-   CONTROLS / LIMITED POSITIVE RESULTS:
-   * Rockman & Forte BG: user-reported resolved during r7; not whole-game certified.
-   * One Piece sky: original and patched title-specific r6 path emulator-tested
-     and DSpico-tested; the generic BG path retained in r8 was reported correct.
-     This is distinct from the OPEN character-motion issue.
-   * Mahjong Touryuumon: custom.r5+ speed/sound/input DSpico-tested; native
-     instruction prefetch timing still pending.
-   * Armored Unit menu BG shake: historical report matches native HW.
-   * Chou Denki Card Game: requires NVRAM initialization, first page last item.
-   * Beatmania: memory-capacity limitation, not a new regression here.
-
-6. Historical completed work / reference notes
-   * See History.txt and Docs/ReleaseValidation-r8.md for current released changes;
-     Docs/ReleaseValidation-r7.md remains the historical r7 record.
-   * Through r6: mono RAM bounds, RTC calendar, NitroSwan-local DSpico ROM cache,
-     filename/load stability, multilingual UI/fonts, cheats, settings directory,
-     NVRAM autosave and direct Pico Loader launch handling.
-   * r6 original/patched One Piece sky/character validation was title-specific.
-   * r7 generalized color BG events, 512-tile OBJ snapshots and conditional BG
-     banks; user confirmed improvement, not complete character-motion repair.
-   * Older resolved boot/status-bar/interrupt/sound reports remain in repository
-     history; they are not a current whole-game compatibility guarantee.
-   * Historical cartridge needs and speedhack reference list below is retained;
-     consult source/SpeedHacks.s for current behavior, not this list alone.
-
+Historical cartridge requirements and speedhack reference (not a new audit):
 Needs Large (256kB) SRAM:
 	Dicing Knight.
 	Judgement Silversword Rebirth Edition

@@ -1,6 +1,13 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+Repository maintenance - 2026-10-02 (documentation/metadata only)
+	Kept v0.7.7-custom.r10 as the latest stable release; no binary or tag changes.
+	Consolidated README and active TODO around r10; retained historical evidence.
+	Documented contributors and normalized Git author aliases with .mailmap.
+	Recorded merged branch recovery SHAs and protected active upstream PR heads.
+	See Docs/RepositoryMaintenance-r10.md for scope and validation.
+
 V0.7.7-custom.r10 - 2026-09-27 (GimoXagros custom build)
 	Paired visible-frame sprite descriptors with their decoded tiles before the
 	next sprite-table latch can replace them. Retained the guest latch timing.

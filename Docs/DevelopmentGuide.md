@@ -1,8 +1,10 @@
-# NitroSwan development guide (r7 baseline)
+# NitroSwan development guide (r10)
 
 This guide describes development procedure, not a hardware certification.
-Read the dated [audit snapshot](BaselineAudit-r7.md) before starting: outstanding
-safety findings must be closed before unrelated accuracy features. The current
+Start with the current [TODO](../NitroSwan_todo.txt) and
+[repository maintenance policy](RepositoryMaintenance-r10.md). The dated
+[audit snapshot](BaselineAudit-r7.md) preserves earlier findings; consult current
+release evidence before treating any historical item as still open. The current
 release is `v0.7.7-custom.r10`; its evidence and remaining runtime gates are
 recorded in [ReleaseValidation-r10.md](ReleaseValidation-r10.md). The older
 r7/r8 audit records below are historical, not current compatibility verdicts.

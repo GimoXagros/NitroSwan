@@ -33,69 +33,19 @@ core.
 배포합니다. 기존 r8/r9 태그와 배포 파일은 비교·복구용으로 유지합니다.
 CPU/native timing 모델, 게임별 whitelist, 저장 형식은 변경하지 않았습니다.
 
-## 0.7.7-custom.r9 안정화 프리릴리즈 (이전 버전)
+## 다운로드 및 프로젝트 안내
 
-- VBlank의 스크롤 값 로딩이 완료 OAM 주소를 덮어쓰던 ARM 레지스터 오류를 수정했습니다.
-- 완료된 OBJ 팔레트를 다음 WS 프레임의 작업 버퍼에 쓰지 않고 호스트 팔레트로 게시합니다.
-- 새 WS 프레임이 없는 host refresh에서도 활성 BG 팔레트와 delta 재생을 유지합니다.
-  이벤트가 없으면 VCOUNT IRQ는 계속 비활성입니다.
-- ROM 선택 전이나 reset 중 renderer가 정지되어도 메뉴 입력을 갱신합니다.
-- 링크된 ARM 코드를 실행하는 합성 회귀 검사, 독립 OAM 전송 주소 관측,
-  누락·미측정 trace를 PASS로 판단하지 않는 분석기를 추가했습니다.
-- 새 타이밍 모델이나 추측성 성능 최적화는 추가하지 않았습니다. r8/main과 기존
-  upstream PR은 보존하며, 이 버전은 별도 Draft PR의 후보입니다.
+- **최신 정식 배포:** [v0.7.7-custom.r10](https://github.com/GimoXagros/NitroSwan/releases/tag/v0.7.7-custom.r10)
+- **현재 작업 목록:** [TODO](NitroSwan_todo.txt)
+- **개발·검증 절차:** [개발 가이드](Docs/DevelopmentGuide.md)
+- **브랜치·태그·릴리즈 정책 및 복구 SHA:** [저장소 정리 기록](Docs/RepositoryMaintenance-r10.md)
+- **원저자·포크 관리자·기여자:** [Contributors](CONTRIBUTORS.md)
 
-검증 범위·제한과 실기 순서는 [r9 검증 기록](Docs/ReleaseValidation-r9.md),
-감사·계측 근거는 [r8 안정화 기록](Docs/StabilityOptimization-r8.md)을 참고하십시오.
-당시 캐릭터 모션 후속 후보의 분석은
-[Character Motion r9](Docs/CharacterMotion-r9.md)에 보존합니다.
-후속 실기 확인과 배포 결과는 위 r10 기록을 기준으로 합니다.
-
-## 0.7.7-custom.r8 렌더러 안전성 개선 (이전 버전)
-
-- ARM assembly에서 C callback으로 진입하는 palette, video-register,
-  frame-complete, restore 및 VBlank 경로의 8-byte stack alignment와 register
-  보존 규약을 정리했습니다. DS/DSi 링크 오브젝트 검사와 선택적 실기용 ABI
-  sentinel을 함께 제공합니다.
-- reset, ROM 교체 및 save-state restore 전에 renderer publication을 중지하고,
-  복원된 WS 상태에서 palette, BG/OBJ tile, OAM을 다시 만든 뒤 완성된 세대만
-  다음 host VBlank에 게시합니다.
-- 하나의 completed WS frame에 속한 OAM, OBJ tile generation, OBJ palette,
-  BG bank 및 palette-raster slot을 같은 triple-buffered descriptor로 게시합니다.
-  16KB OBJ 복사는 dirty generation에서만 수행하는 기존 최적화를 유지합니다.
-- seed와 host-VBlank publication 전송량을 분리해 계측하며, 진단 trace는
-  compile-time 옵션으로만 포함되어 일반 배포 빌드에는 실행 비용이 없습니다.
-- 76개 Python 회귀 검사, 실제 host C RTC/cache 검사, DS/DSi 빌드, 양쪽의
-  ARM ABI 오브젝트 검사 및 NDS header/banner 검증을 CI에서 통과했습니다.
-
-검증 범위와 남은 제한은 [r8 검증 기록](Docs/ReleaseValidation-r8.md)을
-참고하십시오. 실기 근거 없이 sprite line timing, DMA3, EMUPALBUFF 크기,
-게임별 whitelist 또는 배경 raster 동작은 변경하지 않았습니다.
-
-## 0.7.7-custom.r7 영상 개선
-
-- 게임명·checksum·publisher whitelist 대신 컬러 하드웨어의 실제 palette/backdrop
-  쓰기를 기준으로 bounded BG raster를 적용합니다. 일본어 원본과 번역 ROM도
-  같은 영상 하드웨어 경로를 사용합니다.
-- 4bpp OBJ의 16KB 스냅샷 두 개를 메인 RAM에서 준비하고, 완료된 세대만 호스트
-  VBlank에 OBJ VRAM으로 복사합니다. 변경이 없으면 세대 전환·복사를 생략하며,
-  OBJ 타일 변환은 스프라이트가 참조하는 512개로 제한합니다.
-- BG 문자 타일에는 조건부 32KB 보조 뱅크를 사용하고 완료 프레임의 뱅크 선택을
-  VBlank에 반영합니다. 타일맵 변환은 기존 단일 목적지 캐시 경로를 유지합니다.
-  화면 전체를 망가뜨렸던 타일맵 3중 버퍼 실험은 배포 코드에서 제거했습니다.
-- line-142 이후 sprite-table latch와 line-144 OAM 변환을 유지합니다.
-  OBJ 팔레트 raster는 추가하지 않았고, EMUPALBUFF는 1KB이며 DMA3 창 처리를
-  보존합니다. 전체 프레임버퍼·매 주사선 palette 전체 검사는 사용하지 않습니다.
-- 내부 `WSC-VideoCore-r8-test`의 렌더러를 배포합니다. 테스트 번호 r8과 정식
-  버전 `v0.7.7-custom.r7`은 별개입니다.
-
-이전 r7의 검증 범위는 [r7 검증 기록](Docs/ReleaseValidation-r7.md),
-다음 우선순위·난이도는 [TODO](NitroSwan_todo.txt)를 참고하십시오.
-개발 절차·검증 수준·비공개 테스트 자료 정책은
-[개발 가이드](Docs/DevelopmentGuide.md), 2026-09-03 정비 결과는
-[r7 기준선 감사](Docs/BaselineAudit-r7.md)에 기록합니다.
-CI의 소스/모델 검사와 빌드 성공은 DSpico 실기 또는 native WonderSwan
-검증을 대신하지 않습니다.
+r9는 r10으로 대체된 이전 프리릴리즈입니다. r7/r8/r9 당시의 미해결 항목이나
+검증 대기 표시는 현재 r10의 판정이 아닙니다. 과거 변경은 [History](History.txt),
+당시 검증 근거는 [r7](Docs/ReleaseValidation-r7.md),
+[r8](Docs/ReleaseValidation-r8.md), [r9](Docs/ReleaseValidation-r9.md)에 보존합니다.
+태그는 배포 시점의 소스를 가리키며, main에는 이후 문서 정비가 포함될 수 있습니다.
 
 ## 유지되는 주요 기능
 
@@ -191,7 +141,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
   * B&W Palette: Here you can select the palette for B & W games.
   * Border: Choose what to show outside the WS screen.
 * Machine:
-  * Machine: Select the emulated machine.
+  * Machine: Select the emulated machine. Auto is recommended for normal use; fixed models are for compatibility testing.
   * Select WS Bios: Load a real WS Bios.
   * Select WS Color Bios: Load a real WS Color Bios.
   * Select WS Crystal Bios: Load a real WS Crystal Bios.
@@ -212,7 +162,7 @@ Since the DS/DS Lite only has 4MB of RAM you will need a SLOT-2/GBA cart with
   * Autosave NVRAM: Save EEPROM/SRAM when opening the menu or quitting. Enabled by default.
   * Autosave Settings: This will save settings when leaving menu if any changes are made.
   * Autopause Game: Toggle if the game should pause when opening the menu.
-  * Powersave 2nd Screen: If graphics/light should be turned off for the GUI screen when menu is not active.
+  * Powersave 2nd Screen: Turns off the menu screen and its backlight during gameplay when enabled. Opening the menu turns it back on. To keep it lit, set this to Off and use File > Save Settings. This is intentional power saving, not a rendering error.
   * Emulator on Bottom: Select if top or bottom screen should be used for emulator, when menu is active emulator screen is always on top.
   * Autosleep: Doesn't work.
 * WonderWitch: Tools for interacting with a WonderWitch.
@@ -340,6 +290,11 @@ Other test programs I have used to get better accuracy.
 * [RTC Test](https://forums.nesdev.org/viewtopic.php?t=21513) Tests the RTC in certain cartridges.
 
 ## Credits
+
+Original emulator: **Fredrik Ahlström (FluBBaOfWard)**. Custom fork maintenance,
+release integration and user hardware testing: **GimoXagros (Xagros)**.
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for attribution and contributor identity notes.
+
 
 ```text
 Huge thanks to Loopy for the incredible PocketNES, without it this emu would probably never have been made.

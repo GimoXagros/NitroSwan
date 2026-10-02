@@ -18,7 +18,9 @@ gitlinks, binaries, release tag targets, private files or author history changes
 - [x] Confirm merged ancestry; inspect local status and stash without deleting work.
 - [x] Consolidate README/TODO, record credits and normalize author aliases.
 - [x] Validate document links, repository checks and documentation-only diff.
-- [ ] Publish maintenance; retire the four merged remote heads below.
+- [x] Publish [maintenance PR #13](https://github.com/GimoXagros/NitroSwan/pull/13)
+  and retire the four merged remote heads below. PR checks/state are the live
+  source of truth for CI completion and merge; merge only after CI succeeds.
 - [x] Verify latest release, unchanged tag/asset identities and retained PR heads.
 
 ## Branch retention and recovery

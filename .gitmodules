@@ -1,15 +1,19 @@
 [submodule "source/Shared"]
 	path = source/Shared
 	url = https://github.com/GimoXagros/NDS_Shared.git
+	branch = agent/nitroswan-shared-r3
 [submodule "source/ARMV30MZ"]
 	path = source/ARMV30MZ
-	url = https://github.com/FluBBaOfWard/ARMV30MZ.git
+	url = https://github.com/GimoXagros/ARMV30MZ.git
+	branch = agent/opcode-fetch-waitstate
 [submodule "source/Sphinx"]
 	path = source/Sphinx
 	url = https://github.com/GimoXagros/Sphinx.git
+	branch = fix/2bpp-bg-tile-offset
 [submodule "source/WSCart"]
 	path = source/WSCart
 	url = https://github.com/GimoXagros/WSCart.git
+	branch = agent/nitroswan-dspico-rom-cache-r3
 [submodule "source/WSEEPROM"]
 	path = source/WSEEPROM
 	url = https://github.com/FluBBaOfWard/WSEEPROM.git

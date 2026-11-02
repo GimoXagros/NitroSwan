@@ -16,7 +16,7 @@ core.
 
 ## 0.7.7-custom.r10 렌더링 및 ROM 전환 수정
 
-- 보이는 프레임의 sprite descriptor와 타일을 짝지어 OAM을 준비하도록 수정해,
+- 보이는 프레임의 sprite descriptor와 타일을 짝지어 OAM을 준비하도록 수정해
   다음 프레임의 sprite-table latch가 현재 캐릭터에 섞이지 않게 했습니다.
 - ROM 교체·reset 시 이미 동작 중인 scroll/window HBlank DMA 0/3도 안전하게
   정지합니다. 사용자가 `디지몬 → 원피스 → 다이싱 나이트` 전환을 확인했습니다.
@@ -24,7 +24,7 @@ core.
   수정했습니다. transparent BG와 opaque BG 목적지를 구분합니다.
 - SwanCrystal/Color 기종에서도 실제 표시 모드가 흑백 또는 컬러 2bpp라면
   기존 팔레트 변환을 유지합니다. 컬러 4bpp raster의 완료 프레임별 재생은
-  유지하며, 이전 컬러 프레임의 이벤트가 새 흑백 화면에 남지 않게 했습니다.
+  유지하며 이전 컬러 프레임의 이벤트가 새 흑백 화면에 남지 않게 했습니다.
 - DS·DSi 각각 60개 linked-ARM 회귀 검사, 80개 Python 검사 및 host C 검사를
   통과했습니다. About·CI·배포 파일명을 r10으로 맞췄습니다.
 
@@ -45,11 +45,11 @@ r9는 r10으로 대체된 이전 프리릴리즈입니다. r7/r8/r9 당시의 �
 검증 대기 표시는 현재 r10의 판정이 아닙니다. 과거 변경은 [History](History.txt),
 당시 검증 근거는 [r7](Docs/ReleaseValidation-r7.md),
 [r8](Docs/ReleaseValidation-r8.md), [r9](Docs/ReleaseValidation-r9.md)에 보존합니다.
-태그는 배포 시점의 소스를 가리키며, main에는 이후 문서 정비가 포함될 수 있습니다.
+태그는 배포 시점의 소스를 가리키며 main에는 이후 문서 정비가 포함될 수 있습니다.
 
 ## 유지되는 주요 기능
 
-- Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고,
+- Nintendo 3DS의 DSpico/Pico Loader 환경에서 DSi 134 MHz CPU를 요청하고
   불안정한 75 Hz 화면 주사율 변경을 차단해 60 Hz 프레임 변환 경로를 사용합니다.
 - 메뉴 언어는 `Options > Machine > Language`에서 영어/일본어/한국어로
   변경할 수 있으며 기존 설정 파일과 호환됩니다.
@@ -58,14 +58,14 @@ r9는 r10으로 대체된 이전 프리릴리즈입니다. r7/r8/r9 당시의 �
 - 게임별 `.cht` RAM 치트를 지원합니다. 자세한 형식은 아래 `Cheats` 절을
   참고하십시오.
 - RTC 날짜 보정·윤년·월말 처리와 흑백 기종의 16KB RAM 범위를 수정했습니다.
-- DSpico 디버거 RAM의 대용량 ROM은 그대로 보관하고, 현재 표시되는 64KB
+- DSpico 디버거 RAM의 대용량 ROM은 그대로 보관하고 현재 표시되는 64KB
   ROM 뱅크만 DS 메인 RAM에 복사하는 프로젝트 전용 캐시를 사용합니다. 이
   방식은 NDS_Shared와 BlocksDS의 MPU 및 `memCached()`/`memUncached()` 구성을
   변경하지 않습니다.
 - Pico Launcher가 전달하는 FAT 장치 경로를 유지하고 ROM을 제한된 크기의
-  블록으로 읽어, 최초 직접 실행 시 로딩 화면에서 멈추는 문제를 수정했습니다.
+  블록으로 읽어 최초 직접 실행 시 로딩 화면에서 멈추는 문제를 수정했습니다.
 - 직접 실행한 ROM도 `/nitroswan`에 NVRAM을 저장합니다. 자동 저장은 기본으로
-  켜져 있으며, 기존 raw `.sav` 파일도 보조 입력 형식으로 불러올 수 있습니다.
+  켜져 있으며 기존 raw `.sav` 파일도 보조 입력 형식으로 불러올 수 있습니다.
 - 화면이 나오지 않거나 사운드가 끊기는 회귀를 막기 위해 영상·사운드·CPU
   실시간 경로는 실기에서 검증된 `0.7.7-custom` 동작으로 복원했습니다.
 - 알려진 게임 전용 CPU idle-loop 속도핵을 다시 활성화했습니다. 기본값은
@@ -203,7 +203,10 @@ Codes without an enabled flag are loaded disabled.
 
 ## Build
 
-BlocksDS is required. Run the regression suite first, then build:
+BlocksDS and the pinned recursive submodules are required. Follow the
+[development guide](Docs/DevelopmentGuide.md) to clone this fork and initialize
+its dependencies; use tag `v0.7.7-custom.r10` to reproduce the published release.
+Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
@@ -217,7 +220,7 @@ make NAME=NitroSwan-DSi-0.7.7-custom.r10 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 
-Historical r2-r6 validation (not a new r7 whole-game certification):
+Historical r2-r6 validation (not a new r10 whole-game certification):
 The r2 DSi base was verified with Pico Launcher/DSpico on Nintendo 3DS for
 direct ROM launch, gameplay, menu operation, automatic folder/config creation,
 NVRAM save creation, exit-time saving and save reload. The r3 bank cache is

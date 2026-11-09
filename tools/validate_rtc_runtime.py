@@ -33,6 +33,8 @@ class Rtc:
             expect(arm.address(symbol), offset, symbol)
         arm.uc.mem_write(self.chip - 4, b'\xA5' * 28)
         self.call('wsRtcReset')
+        expect(self.call('wsRtcStatusR'), 0, 'first status read after reset')
+        expect(self.call('wsRtcStatusR'), 0x80, 'second status read after reset')
         expect(bytes(arm.uc.mem_read(self.chip + 8, 7)),
                bytes((0, 1, 1, 0, 0, 0, 0)), 'reset calendar')
         expect(arm.call('wsRtcGetStateSize'), 16, 'serialized state size')
@@ -128,7 +130,14 @@ def hour_modes(path):
         rtc.write(0x16, (bcd(hour % 12) | pm, 0, 0))
         rtc.write(0x12, (0x40,))
         expect(rtc.read(0x17, 3), [bcd(hour) | pm, 0, 0], f'12h to 24h {hour}')
-    return {'case': 'all-valid-12h-and-24h-conversions', 'vectors': 72, 'pass': True}
+    for invalid in (0x8A, 0x92, 0xFF):
+        rtc.write(0x12, (0,))
+        rtc.write(0x16, (invalid, 0, 0))
+        expect(rtc.read(0x17, 3), [0, 0, 0], f'invalid 12h read {invalid:02x}')
+        rtc.write(0x12, (0x40,))
+        expect(rtc.read(0x17, 3), [0, 0, 0], f'invalid 12h to 24h {invalid:02x}')
+    return {'case': 'all-valid-hour-conversions-and-invalid-12h-guards',
+            'vectors': 78, 'pass': True}
 
 
 def save_state(path):

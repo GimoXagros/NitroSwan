@@ -4,6 +4,8 @@ Upstream [WSRTC PR #2](https://github.com/FluBBaOfWard/WSRTC/pull/2) is closed w
 
 The custom fork used an older, different C calendar implementation. It saturated malformed writes and normalized every date/time field after each byte transfer. That changed invalid seconds immediately and could change fields unrelated to the write. The dependency update replaces this helper with upstream `dd7a8fe` calendar and per-register protocol handling. Seconds `E5` are masked to `65` on write, then corrected to `00` with a minute carry on the next tick.
 
+The expanded hour-mode vectors also cover a packed-BCD boundary missed by upstream's simple binary `+/-0x12`: 24-hour `20/21` must read as PM `88/89`, and PM `88/89` must convert back to `20/21`. Six carry/borrow-correction instructions repair those cases while retaining the existing invalid-hour guards.
+
 ## Integration contract
 
 - WSRTC retains its one-argument, once-per-second `wsRtcUpdate`, status-read readiness and 20-byte ARM structure with 16 bytes of saved state. WSCart still owns the 384,000-clock divider.

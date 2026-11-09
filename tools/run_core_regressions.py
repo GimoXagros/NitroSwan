@@ -66,8 +66,6 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="nitroswan-tests-") as temp_dir:
         cases = (
-            ("rtc_calendar", "source/WSCart/WSRTC",
-             "source/WSCart/WSRTC/WSRTCCalendar.c"),
             ("dspico_rom_cache", "source", "source/DspicoRomCache.c"),
         )
         for name, include, source in cases:
@@ -75,7 +73,7 @@ def main() -> int:
             run([compiler, "-std=c11", "-Wall", "-Wextra", "-Werror",
                  f"-I{include}", f"tests/test_{name}.c", source, "-o", str(exe)])
             run([str(exe)])
-    print("PASS host C regressions: RTC calendar and DSpico ROM cache")
+    print("PASS host C regressions: DSpico ROM cache")
     return 0
 
 

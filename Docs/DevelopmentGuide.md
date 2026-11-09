@@ -39,7 +39,7 @@ Protect cross-repository PR heads even if the fork itself has no open PR:
 
 - NitroSwan `agent/todo2-bg-palette`: upstream #59; Sphinx #4 dependency.
 - NitroSwan `agent/opcode-fetch-waitstate-upstream`: #60; Sphinx #5 / ARMV30MZ #6.
-- WSRTC `agent/rtc-edge-fixes-v2`: #2, separate from the current RTC gitlink.
+- WSRTC `agent/rtc-edge-fixes-v2`: upstream #2 was closed without merging on 2026-11-09; retain it as historical evidence, not an integration dependency. See [RTC correction](RTC-Resolution-20261109.md) for the maintained fork and linked ARM checks.
 
 Before branch deletion, check all worktrees, unique commits, ancestor relation,
 stash, dirty/untracked work and open PRs across repositories. Delete only merged,

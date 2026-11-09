@@ -48,6 +48,11 @@ jobs:
           make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r10 DSPICO_3DS_BUILD=1 \
             SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 
+      - name: Execute linked ARM RTC protocol regressions
+        run: |
+          /tmp/nitroswan-validation/bin/python tools/validate_rtc_runtime.py build/NitroSwan-DS-0.7.7-custom.r10.elf
+          /tmp/nitroswan-validation/bin/python tools/validate_rtc_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
+
       - name: Validate linked renderer ABI
         run: |
           python3 tools/validate_renderer_abi.py \

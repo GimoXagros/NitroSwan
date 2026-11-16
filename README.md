@@ -45,7 +45,7 @@ r9는 r10으로 대체된 이전 프리릴리즈입니다. r7/r8/r9 당시의 �
 검증 대기 표시는 현재 r10의 판정이 아닙니다. 과거 변경은 [History](History.txt),
 당시 검증 근거는 [r7](Docs/ReleaseValidation-r7.md),
 [r8](Docs/ReleaseValidation-r8.md), [r9](Docs/ReleaseValidation-r9.md)에 보존합니다.
-태그는 배포 시점의 소스를 가리키며 main에는 이후 문서 정비가 포함될 수 있습니다.
+태그는 배포 시점의 소스를 가리킵니다. `main`에는 이후 문서 정비와 2026-11-09 RTC 소스 수정이 포함되어 있으며, 기존 r10 배포 파일에는 이 RTC 수정이 포함되지 않습니다.
 
 ## 유지되는 주요 기능
 

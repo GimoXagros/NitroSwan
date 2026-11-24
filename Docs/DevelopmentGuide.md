@@ -1,12 +1,12 @@
-# NitroSwan development guide (r10)
+# NitroSwan development guide (r11)
 
 This guide describes development procedure, not a hardware certification.
 Start with the current [TODO](../NitroSwan_todo.txt) and
 [repository maintenance policy](RepositoryMaintenance-r10.md). The dated
 [audit snapshot](BaselineAudit-r7.md) preserves earlier findings; consult current
 release evidence before treating any historical item as still open. The current
-release is `v0.7.7-custom.r10`; its evidence and remaining runtime gates are
-recorded in [ReleaseValidation-r10.md](ReleaseValidation-r10.md). The older
+release is `v0.7.7-custom.r11`; its evidence and remaining runtime gates are
+recorded in [RTC verification](RTC-Resolution-20261109.md) and the release notes. The older
 r7/r8 audit records below are historical, not current compatibility verdicts.
 
 ## Repositories, branches and dependencies
@@ -66,11 +66,11 @@ python3 -m compileall -q tools tests
 python3 tools/validate_repository.py
 python3 tools/validate_localization.py
 python3 tools/run_core_regressions.py
-make -j2 NAME=NitroSwan-DS-0.7.7-custom.r10
-make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r10 DSPICO_3DS_BUILD=1 \
+make -j2 NAME=NitroSwan-DS-0.7.7-custom.r11
+make -j2 NAME=NitroSwan-DSi-0.7.7-custom.r11 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
-python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r10.nds \
-  --dsi NitroSwan-DSi-0.7.7-custom.r10.nds
+python3 tools/validate_nds.py --ds NitroSwan-DS-0.7.7-custom.r11.nds \
+  --dsi NitroSwan-DSi-0.7.7-custom.r11.nds
 ```
 
 `HOST_CC` selects a host executable path/name, not shell flags or a command
@@ -92,7 +92,7 @@ Use a new directory, not cleanup commands on a working tree with private files:
 ```sh
 git clone --no-checkout https://github.com/GimoXagros/NitroSwan.git NitroSwan-clean
 cd NitroSwan-clean
-git checkout --detach v0.7.7-custom.r10
+git checkout --detach v0.7.7-custom.r11
 git submodule sync --recursive
 git submodule update --init --recursive
 ```

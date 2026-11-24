@@ -21,7 +21,7 @@
 #include "PaletteRaster.h"
 #include "Cheats.h"
 
-#define EMUVERSION "V0.7.7-custom.r10 2026-09-27"
+#define EMUVERSION "V0.7.7-custom.r11 2026-11-24"
 
 void hacksInit(void);
 

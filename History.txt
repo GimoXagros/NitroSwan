@@ -1,6 +1,12 @@
 NitroSwan revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+V0.7.7-custom.r11 - 2026-11-24 (GimoXagros custom build)
+	Implemented the minute steady RTC interrupt level for seconds 00 through 29.
+	Added linked ARM regressions for changes at mode selection and clock ticks.
+	Includes RTC per-register writes, delayed invalid-second carry and packed-BCD
+	hour conversion. See Docs/RTC-Resolution-20261109.md for regression coverage.
+
 Repository maintenance - 2026-10-02 (documentation/metadata only)
 	Kept v0.7.7-custom.r10 as the latest stable release; no binary or tag changes.
 	Consolidated README and active TODO around r10; retained historical evidence.

@@ -1,4 +1,4 @@
-# NitroSwan V0.7.7-custom.r10
+# NitroSwan V0.7.7-custom.r11
 
 <img align="right" width="220" src="./logo.png" alt="The WonderSwan logo" />
 
@@ -13,6 +13,10 @@ core.
 > 이는 보고된 테스트 장면의 결과이며 모든 게임·모드의 완전한 정확성이나
 > 성능 향상을 보증하지 않습니다. 검증 범위와 남은 제한은
 > [r10 검증 기록](Docs/ReleaseValidation-r10.md)을 참고하십시오.
+
+## r11 RTC
+
+RTC 분 주기 출력 모드(상태 비트 `0x0A`)에서 카트리지 인터럽트 신호는 00~29초에 켜지고 30~59초에 꺼집니다. RTC 명령으로 모드를 선택하거나 해제할 때도 신호를 갱신합니다. [asie의 ws-rtc-test](https://codeberg.org/asie/ws-rtc-test)는 실제 카트리지에서 이 동작을 비교할 수 있는 테스트 ROM입니다.
 
 ## 0.7.7-custom.r10 렌더링 및 ROM 전환 수정
 
@@ -35,7 +39,7 @@ CPU/native timing 모델, 게임별 whitelist, 저장 형식은 변경하지 않
 
 ## 다운로드 및 프로젝트 안내
 
-- **최신 정식 배포:** [v0.7.7-custom.r10](https://github.com/GimoXagros/NitroSwan/releases/tag/v0.7.7-custom.r10)
+- **최신 정식 배포:** [v0.7.7-custom.r11](https://github.com/GimoXagros/NitroSwan/releases/tag/v0.7.7-custom.r11)
 - **현재 작업 목록:** [TODO](NitroSwan_todo.txt)
 - **개발·검증 절차:** [개발 가이드](Docs/DevelopmentGuide.md)
 - **브랜치·태그·릴리즈 정책 및 복구 SHA:** [저장소 정리 기록](Docs/RepositoryMaintenance-r10.md)
@@ -45,7 +49,7 @@ r9는 r10으로 대체된 이전 프리릴리즈입니다. r7/r8/r9 당시의 �
 검증 대기 표시는 현재 r10의 판정이 아닙니다. 과거 변경은 [History](History.txt),
 당시 검증 근거는 [r7](Docs/ReleaseValidation-r7.md),
 [r8](Docs/ReleaseValidation-r8.md), [r9](Docs/ReleaseValidation-r9.md)에 보존합니다.
-태그는 배포 시점의 소스를 가리킵니다. `main`에는 이후 문서 정비와 2026-11-09 RTC 소스 수정이 포함되어 있으며, 기존 r10 배포 파일에는 이 RTC 수정이 포함되지 않습니다.
+r11에는 11월 RTC 프로토콜·BCD 시각 변환 수정이 포함됩니다. [RTC 검증 기록](Docs/RTC-Resolution-20261109.md)에서 레지스터별 동작과 검증 범위를 확인할 수 있습니다.
 
 ## 유지되는 주요 기능
 
@@ -80,9 +84,9 @@ r9는 r10으로 대체된 이전 프리릴리즈입니다. r7/r8/r9 당시의 �
 
 ### Which build should I use? / 빌드 선택
 
-- `NitroSwan-DSi-0.7.7-custom.r10.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
+- `NitroSwan-DSi-0.7.7-custom.r11.nds`: DSi 모드의 3DS+DSpico/Pico Loader 및
   DSi용 권장 빌드입니다. 호환성을 위해 주사율 변경은 항상 꺼집니다.
-- `NitroSwan-DS-0.7.7-custom.r10.nds`: DS/DS Lite 및 일반 DS-mode
+- `NitroSwan-DS-0.7.7-custom.r11.nds`: DS/DS Lite 및 일반 DS-mode
   플래시카트용 빌드입니다.
 
 ## How to use
@@ -205,18 +209,18 @@ Codes without an enabled flag are loaded disabled.
 
 BlocksDS and the pinned recursive submodules are required. Follow the
 [development guide](Docs/DevelopmentGuide.md) to clone this fork and initialize
-its dependencies; use tag `v0.7.7-custom.r10` to reproduce the published release.
+its dependencies; use tag `v0.7.7-custom.r11` to reproduce the published release.
 Run the regression suite first, then build:
 
 ```sh
 python3 tools/run_core_regressions.py
-make NAME=NitroSwan-DS-0.7.7-custom.r10
+make NAME=NitroSwan-DS-0.7.7-custom.r11
 ```
 
 The DSi/DSpico build is:
 
 ```sh
-make NAME=NitroSwan-DSi-0.7.7-custom.r10 DSPICO_3DS_BUILD=1 \
+make NAME=NitroSwan-DSi-0.7.7-custom.r11 DSPICO_3DS_BUILD=1 \
   SPECS="$BLOCKSDS/sys/crts/dsi_arm9.specs"
 ```
 

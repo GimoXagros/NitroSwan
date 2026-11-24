@@ -23,4 +23,15 @@ python3 tools/validate_rtc_runtime.py build/NitroSwan-DSi-0.7.7-custom.r10.elf
 
 The usual repository/localization checks, host regressions, DS/DSi builds and existing linked renderer tests remain required. Consult the exact commit's Build workflow for execution results. Alarm/IRQ behavior is not certified or fixed by this change; upstream's remaining Alarm/IRQ work is separate.
 
-This is a main-branch source correction, not a new release. Existing r10 tags/binaries and dated audit/release records retain their original content and validation scope.
+This correction first shipped in v0.7.7-custom.r11. The November 9 tests above
+refer to development build names used before that release.
+
+## November 24 follow-up
+
+With both INTME and INTFE enabled, the RTC minute-steady interrupt output is
+high during seconds 00–29 and low during 30–59. The level follows configuration
+changes as well as clock ticks. The linked ARM regression exercises the cartridge
+interrupt callback and the RTC command interface. The public
+[ws-rtc-test source](https://codeberg.org/asie/ws-rtc-test) provides the
+reference test sequence. Physical-cartridge timing and the other interrupt
+modes remain follow-up work.

@@ -1,4 +1,4 @@
-NitroSwan Todo — v0.7.7-custom.r10 (2026-09-27)
+NitroSwan Todo — v0.7.7-custom.r11 (2026-11-24)
 
 Current result: user hardware verification confirms the reported character
 motion/trail, Rockman & Forte and background palette defects resolved.

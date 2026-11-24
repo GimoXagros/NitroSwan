@@ -2,8 +2,9 @@
 """Execute linked RTC command/data routines with synthetic chip state.
 
 Seconds and AM/PM vectors include asie/ws-rtc-test 071687a; calendar expectations
-use Python's Gregorian calendar for 2000..2099. This is not cartridge, alarm/IRQ,
-bus timing or full test-ROM validation. Requires existing unicorn/pyelftools.
+use Python's Gregorian calendar for 2000..2099. Minute-steady output vectors
+follow asie/ws-rtc-test 74d6f32. The callback records chip output levels.
+Physical interrupt delivery and cartridge bus timing require separate testing.
 """
 import argparse
 import calendar
@@ -11,6 +12,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from unicorn import UC_HOOK_CODE
+from unicorn.arm_const import UC_ARM_REG_R0
 from validate_renderer_runtime import ArmImage
 
 
@@ -140,6 +143,42 @@ def hour_modes(path):
             'vectors': 78, 'pass': True}
 
 
+def minute_steady(path):
+    arm = ArmImage(path)
+    rtc = Rtc(arm)
+    callback = arm.SCRATCH + 0x7000
+    arm.write(callback, 0xE12FFF1E)  # bx lr
+    arm.write(rtc.chip, callback)
+    levels = [0]
+
+    def record(uc, pc, size, data):
+        levels.append(uc.reg_read(UC_ARM_REG_R0))
+
+    arm.uc.hook_add(UC_HOOK_CODE, record, begin=callback, end=callback)
+    rtc.write(0x16, (0x12, 0x34, 0x59))
+    rtc.write(0x12, (0x4A,))  # 24-hour, INTME and INTFE
+    expect(levels[-1], 0, 'enable at 59')
+    rtc.tick()
+    expect(levels[-1], 1, 'minute steady 59 -> 00')
+    rtc.write(0x16, (0x12, 0x35, 0x29))
+    expect(levels[-1], 1, 'time write at 29')
+    rtc.tick()
+    expect(levels[-1], 0, 'minute steady 29 -> 30')
+    rtc.write(0x14, (0x24, 1, 1, 1, 0x12, 0x35, 0x01))
+    expect(levels[-1], 1, 'date/time write into active half')
+    rtc.write(0x16, (0x12, 0x35, 0x31))
+    expect(levels[-1], 0, 'time write into inactive half')
+    rtc.write(0x16, (0x12, 0x35, 0x01))
+    expect(levels[-1], 1, 'time write into active half')
+    rtc.write(0x12, (0x40,))
+    expect(levels[-1], 0, 'disable during active half')
+    rtc.write(0x12, (0x4A,))
+    expect(levels[-1], 1, 'enable during active half')
+    rtc.write(0x10, ())
+    expect(levels[-1], 0, 'command reset during active half')
+    return {'case': 'minute-steady-chip-output', 'vectors': 10, 'pass': True}
+
+
 def save_state(path):
     arm = ArmImage(path)
     rtc = Rtc(arm)
@@ -188,7 +227,7 @@ def main():
     parser.add_argument('elf', type=Path)
     args = parser.parse_args()
     results = []
-    for test in (seconds, calendar_boundaries, isolated_writes, hour_modes, save_state):
+    for test in (seconds, calendar_boundaries, isolated_writes, hour_modes, minute_steady, save_state):
         try:
             results.append(test(args.elf))
         except AssertionError as error:
